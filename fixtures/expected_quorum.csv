@@ -1,0 +1,14 @@
+field,value
+basis,UNITS
+threshold_bps,5000
+units_represented,85
+total_units,120
+units_met,True
+bps_represented,7085
+total_bps,10000
+weighted_met,True
+direct_units,49
+proxy_units,36
+direct_only_met,False
+met,True
+merkle_root,b09b49d9efad29ce0eafe14b1abc3309286b5de5d9d82aef871b23a72d099b3d
