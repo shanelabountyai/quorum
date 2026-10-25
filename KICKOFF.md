@@ -11,16 +11,16 @@ Read, in order, from the kit: CLAUDE.md, prd-quorum.md, docs/decisions.md (autho
 docs/domain-brief.md, docs/portfolio-overlap.md, docs/phase-1-tasks.md.
 
 Steps, in order:
-1. Port check. Port 6200 is proposed (D-4). You cannot read ~/.claude/CLAUDE.md from here;
-   check saas-foundation/CLONES.md for a clash (6100 is gavel). If 6200 appears there, stop
-   and tell me. Otherwise continue and record "6200 proposed; port-table row is Shane's"
+1. Port check. Port 7200 is proposed (D-4). You cannot read ~/.claude/CLAUDE.md from here;
+   check saas-foundation/CLONES.md for a clash (6100 is gavel). If 7200 appears there, stop
+   and tell me. Otherwise continue and record "7200 proposed; port-table row is Shane's"
    in docs/decisions.md D-4 and in NEXT.md.
 2. Clone the template with shared history (NOT the GitHub template button):
      git clone <saas-foundation url> quorum && cd quorum
      git remote rename origin template
      git checkout -B main v1.3.0
      npm ci
-     npm run new-project -- quorum 6200
+     npm run new-project -- quorum 7200
    Do not run new-project twice. Copy the kit in: CLAUDE.md, KICKOFF.md, NEXT.md,
    prd-quorum.md, docs/*.md, tools/*.py, fixtures/samples/, .claude/settings.json (merge the
    model pin; keep anything the template put there). Add the scope-honesty banner from the
@@ -55,7 +55,7 @@ Steps, in order:
    Push `kickoff` to origin (shanelabountyai/quorum) and open a PR against main. Do not
    merge. Then open a separate PR on saas-foundation adding the CLONES.md row:
    quorum | shanelabountyai/quorum (public) | v1.3.0 | 2026-10-25; HOA / co-op governance,
-   verifiable tally (hashed receipts, Merkle commitment, sealed voter link), port 6200;
+   verifiable tally (hashed receipts, Merkle commitment, sealed voter link), port 7200;
    synthetic only; not deployed; tools/ (Python stdlib oracles), fixtures/ are clone-owned.
    Show me both PR links.
 9. Plan first: write the Phase 1 plan as the order you will do tasks 1.1 to 1.14 in, which
@@ -79,7 +79,7 @@ limits; branch + PR, never merge.
 ## Still to do by hand
 
 - Create the empty public repo `shanelabountyai/quorum` before the session and attach both repos. Before the first push the session runs `git ls-files | grep -iE "\.env|secret|credential|\.pem$|\.key$"` (only `.env.example` may appear) and confirms `.gitignore` covers `.env` and `.env*.local`; check it did.
-- `~/.claude/CLAUDE.md`: add the port-table row (quorum → 6200) on the Mac; the cloud session cannot.
+- `~/.claude/CLAUDE.md`: add the port-table row (quorum → 7200) on the Mac; the cloud session cannot.
 - Review and merge the two PRs (quorum `kickoff`; saas-foundation CLONES row).
 - Build-log card #21: name **Quorum**, PRD and repo links, status `in progress`, chips per `docs/portfolio-overlap.md` "Suggested card chips".
 - Neon and Vercel only if this is ever deployed (not planned; synthetic data).
