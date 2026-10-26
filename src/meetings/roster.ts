@@ -22,9 +22,13 @@ export async function readRoster(tx: Tx, orgId: string): Promise<Roster> {
   };
 }
 
-/** A meeting's proxies in engine shape, keyed as the fixture keys them, plus the row id for the sealed link. */
+/**
+ * A meeting's proxies in engine shape, keyed as the fixture keys them, plus the row id for the sealed link. The ONE
+ * reader of a proxy's revocation: `revoked_at` is the import's Proxy.revokedAt or, failing that, the D-55
+ * ProxyRevocation row — the database refuses a row for a proxy the import already revoked, so at most one is set.
+ */
 export async function readProxies(tx: Tx, meetingRowId: string): Promise<(Proxy & { row_id: string })[]> {
-  const rows = await tx.proxy.findMany({ where: { meetingId: meetingRowId }, include: { grantorUnit: { select: { unitId: true } }, grantorOwner: { select: { ownerId: true } }, holderOwner: { select: { ownerId: true } } } });
+  const rows = await tx.proxy.findMany({ where: { meetingId: meetingRowId }, include: { grantorUnit: { select: { unitId: true } }, grantorOwner: { select: { ownerId: true } }, holderOwner: { select: { ownerId: true } }, revocation: { select: { revokedAt: true } } } });
   return rows.map((p) => ({
     row_id: p.id,
     proxy_id: p.proxyId,
@@ -32,7 +36,7 @@ export async function readProxies(tx: Tx, meetingRowId: string): Promise<(Proxy 
     grantor_owner: p.grantorOwner.ownerId,
     holder_owner: p.holderOwner.ownerId,
     received_at: p.receivedAt as Timestamp,
-    revoked_at: (p.revokedAt ?? '') as Timestamp | '',
+    revoked_at: (p.revokedAt ?? p.revocation?.revokedAt ?? '') as Timestamp | '',
   }));
 }
 

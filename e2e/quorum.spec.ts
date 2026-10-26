@@ -81,6 +81,24 @@ test('the desk casts for an owner; the receipt is shown once with its limit', as
   await expect(direct.getByTestId('receipt')).toHaveText(/^[0-9a-f]{64}$/);
   await expect(direct.getByText('does not hide how you voted')).toBeVisible();
   await expectAccessible(page, 'desk (receipt shown)', 'Ballot counted');
+
+  // D-55: one paper proxy from O-001 (the homeowner below revokes it from their own page) and a desk revocation
+  await page.goto(meetingUrl);
+  const pick = async (label: string, text: string) => page.getByLabel(label, { exact: true }).selectOption({ label: (await page.getByLabel(label, { exact: true }).locator('option', { hasText: text }).first().textContent())! });
+  await pick('Unit', 'A-101');
+  await pick('Grantor', 'O-001 ');
+  await pick('Holder', 'O-002 ');
+  await page.getByRole('button', { name: 'Record proxy' }).click();
+  await expect(page.getByRole('status')).toContainText('Proxy P-050 recorded at');
+  await page.goto(`${meetingUrl}/desk`);
+  const revoke = page.getByRole('region', { name: 'Revoke a proxy for its grantor' });
+  await revoke.getByLabel('Proxy to revoke').selectOption({ label: (await revoke.getByLabel('Proxy to revoke').locator('option', { hasText: 'P-001:' }).textContent())! });
+  await revoke.getByLabel('Reason').fill('O-024 presented a signed revocation at the desk');
+  await revoke.getByRole('button', { name: 'Revoke proxy' }).click();
+  await expect(revoke.getByRole('status')).toContainText('Proxy P-001 revoked at');
+  const row = (await db.query(`SELECT r.channel, r.reason FROM "ProxyRevocation" r JOIN "Proxy" p ON p.id = r."proxyId" JOIN "Meeting" m ON m.id = p."meetingId" JOIN "Org" o ON o.id = m."orgId" WHERE o.slug = $1 AND p."proxyId" = 'P-001'`, [SLUG])).rows;
+  expect(row).toEqual([{ channel: 'DESK', reason: 'O-024 presented a signed revocation at the desk' }]);
+  await expectAccessible(page, 'desk (proxy revoked)', 'Proxy P-001 revoked at');
 });
 
 test('a homeowner whose invite matched the roster is linked, casts, and a second ballot for the unit is DUPLICATE_UNIT', async ({ page }) => {
@@ -99,6 +117,13 @@ test('a homeowner whose invite matched the roster is linked, casts, and a second
 
   await page.goto(`${meetingUrl}/vote`);
   await expectAccessible(page, 'vote', 'You are voting as roster owner');
+  // D-55: the grantor revokes the proxy they granted, from their own page
+  const granted = page.getByRole('region', { name: 'Proxies you granted' });
+  await granted.getByRole('button', { name: 'Revoke proxy P-050' }).click();
+  await expect(granted.getByRole('status')).toContainText('Proxy P-050 revoked at');
+  await expectAccessible(page, 'vote (proxy revoked)', 'Proxy P-050 revoked at');
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Proxies you granted' })).toContainText(/P-050: unit A-101, held by O-002 .*Revoked at \d{4}-/);
   const ballot = page.getByRole('region').filter({ has: page.getByRole('heading', { name: /^Unit / }) }).first();
   await ballot.getByRole('checkbox', { name: /C-01/ }).check();
   await ballot.getByRole('checkbox', { name: /C-05/ }).check();

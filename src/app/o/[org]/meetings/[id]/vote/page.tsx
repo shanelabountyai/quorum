@@ -1,14 +1,16 @@
 import Link from 'next/link';
 import { requireOrg } from '@/core/authz/guards';
+import { ActionForm } from '@/core/ui/action-form';
 import { CastForm } from '@/components/cast-form';
 import { contestFields } from '@/components/contest-fields';
 import { RECEIPT_LIMIT, ScopeNote } from '@/components/honesty';
 import { meetingInOrg } from '@/meetings/admin';
 import { asApp } from '@/meetings/db';
 import { linkedOwner } from '@/meetings/owners';
+import { proxiesGrantedBy } from '@/meetings/revoke';
 import { readRoster } from '@/meetings/roster';
 import { ownersOfUnit } from '@/tally/asof';
-import { castByProxyAction, castOwnAction } from './actions';
+import { castByProxyAction, castOwnAction, revokeOwnProxyAction } from './actions';
 
 export const metadata = { title: 'Vote' };
 
@@ -19,12 +21,12 @@ export default async function Vote({ params }: { params: Promise<{ org: string; 
   const v = await asApp(async (tx) => {
     const head = await meetingInOrg(tx, ctx.orgId, id);
     const me = await linkedOwner(tx, ctx.orgId, ctx.userId);
-    if (!me) return { head, me, units: [], proxies: [] };
+    if (!me) return { head, me, units: [], proxies: [], granted: [] };
     const roster = await readRoster(tx, ctx.orgId);
     const mine = roster.units.map((u) => u.unit_id).filter((u) => ownersOfUnit(roster.ownerships, u, head.definition.rules.record_date).has(me.ownerId));
     const units = await tx.unit.findMany({ where: { orgId: ctx.orgId, unitId: { in: mine } }, orderBy: { unitId: 'asc' }, select: { id: true, unitId: true } });
-    const proxies = await tx.proxy.findMany({ where: { meetingId: head.id, holderOwnerId: me.ownerRowId }, orderBy: { proxyId: 'asc' }, include: { grantorUnit: { select: { unitId: true } } } });
-    return { head, me, units, proxies };
+    const proxies = await tx.proxy.findMany({ where: { meetingId: head.id, holderOwnerId: me.ownerRowId }, orderBy: { proxyId: 'asc' }, include: { grantorUnit: { select: { unitId: true } }, revocation: { select: { revokedAt: true } } } });
+    return { head, me, units, proxies, granted: await proxiesGrantedBy(tx, ctx.orgId, ctx.userId, head.id) };
   });
   const fields = contestFields(v.head.definition);
   const back = `/o/${ctx.slug}/meetings/${v.head.id}`;
@@ -53,12 +55,35 @@ export default async function Vote({ params }: { params: Promise<{ org: string; 
           {v.proxies.map((p) => (
             <section key={p.id} aria-label={`Proxy ballot ${p.proxyId}`}>
               <h2>As proxy {p.proxyId} for unit {p.grantorUnit.unitId}</h2>
+              {(p.revocation?.revokedAt ?? p.revokedAt) && <p>The grantor revoked this proxy at {p.revocation?.revokedAt ?? p.revokedAt}; a ballot cast with it now is rejected PROXY_REVOKED.</p>}
               <CastForm action={castByProxyAction.bind(null, ctx.slug)} contests={fields} limit={RECEIPT_LIMIT}>
                 <input type="hidden" name="meetingId" value={v.head.id} />
                 <input type="hidden" name="proxyId" value={p.id} />
               </CastForm>
             </section>
           ))}
+          {v.granted.length > 0 && (
+            <section aria-labelledby="granted-h">
+              <h2 id="granted-h">Proxies you granted</h2>
+              <p>You may revoke a proxy you granted until the meeting closes. A ballot your holder casts with it afterwards is rejected PROXY_REVOKED; one they already cast keeps its label, and your own ballot for the unit supersedes it (D-26).</p>
+              <ul>
+                {v.granted.map((g) => (
+                  <li key={g.id}>
+                    {g.proxyId}: unit {g.grantorUnit}, held by {g.holderOwner} {g.holderName}, received {g.receivedAt}.{' '}
+                    {g.revokedAt ? (
+                      <>Revoked at {g.revokedAt}.</>
+                    ) : (
+                      <ActionForm action={revokeOwnProxyAction.bind(null, ctx.slug)}>
+                        <input type="hidden" name="meetingId" value={v.head.id} />
+                        <input type="hidden" name="proxyId" value={g.id} />
+                        <button type="submit">Revoke proxy {g.proxyId}</button>
+                      </ActionForm>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </>
       )}
     </main>
