@@ -44,6 +44,9 @@ jobs:
           --health-retries=5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # foundation:drift diffs against the v1.3.0 tag, which a shallow checkout does not have
+          fetch-tags: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
