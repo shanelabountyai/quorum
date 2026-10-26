@@ -14,6 +14,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: write # the migrate-diff step comments on the PR when the history and the schema differ
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -70,8 +74,21 @@ jobs:
       - run: npx prisma migrate deploy
       # Phase 2: the migrations are hand-written (the sandbox cannot run `migrate dev`), so prove the migration
       # history and prisma/schema agree — any column, index, FK or type the SQL got wrong fails here, not in a test.
-      - run: createdb quorum_shadow
-      - run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema --shadow-database-url "postgresql://postgres:postgres@localhost:5432/quorum_shadow" --exit-code
+      # The run logs sit on a blob host the cloud session's proxy refuses, so a non-empty diff is also posted on the
+      # PR as a comment (the only channel the unattended session can read); the step still fails.
+      - run: |
+          createdb quorum_shadow
+          set +e
+          npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema --shadow-database-url "postgresql://postgres:postgres@localhost:5432/quorum_shadow" --exit-code --script > migrate-diff.txt 2>&1
+          rc=$?
+          cat migrate-diff.txt
+          if [ "$rc" -ne 0 ] && [ -n "${{ github.event.pull_request.number }}" ]; then
+            { echo "**migrations vs schema differ** (\`prisma migrate diff\` exit $rc on ${{ github.sha }}):"; echo; echo '```sql'; cat migrate-diff.txt; echo '```'; } > comment.md
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md || true
+          fi
+          exit $rc
+        env:
+          GH_TOKEN: ${{ github.token }}
       - run: npx vitest run
       # Production build, served — the way it ships. login.spec.ts drives a real page.
       - run: npx playwright install --with-deps chromium
