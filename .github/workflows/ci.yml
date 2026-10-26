@@ -68,6 +68,10 @@ jobs:
       - run: npm run fixtures:check
       - run: createdb quorum_test
       - run: npx prisma migrate deploy
+      # Phase 2: the migrations are hand-written (the sandbox cannot run `migrate dev`), so prove the migration
+      # history and prisma/schema agree — any column, index, FK or type the SQL got wrong fails here, not in a test.
+      - run: createdb quorum_shadow
+      - run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema --shadow-database-url "postgresql://postgres:postgres@localhost:5432/quorum_shadow" --exit-code
       - run: npx vitest run
       # Production build, served — the way it ships. login.spec.ts drives a real page.
       - run: npx playwright install --with-deps chromium

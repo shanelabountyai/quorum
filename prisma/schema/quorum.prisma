@@ -1,0 +1,231 @@
+// Quorum's own tables (clone-owned; Phase 2, task 2.1). Shape: D-19 (append-only), D-20 (the sealed link),
+// D-31..D-35. Every meeting-axis instant and day is a fixed-width string (D-8): CHAR(19) "YYYY-MM-DDTHH:MM:SS",
+// CHAR(10) "YYYY-MM-DD", each with a CHECK on the regex in the migration. No @db.Date anywhere (Bookable's R-042).
+// Integers only: shares are basis points, money is cents. The migration's hand-written half adds the CHECKs,
+// the append-only triggers, the close/seal trigger, the quorum_app role, its grants and the three SECURITY
+// DEFINER functions; `prisma migrate diff` in CI asserts this file and the migrations agree.
+
+enum MeetingStatus {
+  OPEN
+  CLOSED
+}
+
+/// Mirrors src/tally/codes.ts BallotStatus; a set-equality test compares pg_enum with the tuple (task 2.10).
+enum BallotStatus {
+  COUNTED
+  REJECTED
+}
+
+/// Mirrors src/tally/codes.ts BALLOT_REJECT_CODES in precedence order; pg_enum vs the tuple is tested (task 2.10).
+enum BallotCode {
+  UNKNOWN_UNIT
+  EARLY
+  LATE
+  PROXY_UNKNOWN
+  PROXY_UNIT_MISMATCH
+  PROXY_GRANTOR_NOT_OWNER
+  PROXY_LATE
+  PROXY_REVOKED
+  PROXY_CHAIN
+  PROXY_HOLDER_MISMATCH
+  PROXY_HOLDER_NOT_MEMBER
+  NOT_OWNER
+  INELIGIBLE_DELINQUENT
+  DUPLICATE_UNIT
+  PROXY_SUPERSEDED_BY_OWNER
+}
+
+/// E-4 reads exactly these three. D-21's CREDIT arrives in Phase 3 with its engine change and golden case (D-35 c).
+enum LedgerKind {
+  CHARGE
+  PAYMENT
+  FINE
+}
+
+/// One association = one org (D-5). The thing that votes.
+model Unit {
+  id         String         @id @default(uuid()) @db.Uuid
+  orgId      String         @db.Uuid
+  org        Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  unitId     String // "A-101" — the public id the fixtures and the ballot rules use
+  unitType   String         @default("")
+  building   String         @default("")
+  floor      Int            @default(0)
+  shares     UnitShare[]
+  ownerships Ownership[]
+  ledger     LedgerEntry[]
+  proxies    Proxy[]
+  secrets    BallotSecret[]
+
+  @@unique([orgId, unitId])
+}
+
+/// E-3: the share in force on day D is the row with the greatest effectiveFrom <= D.
+model UnitShare {
+  id            String @id @default(uuid()) @db.Uuid
+  unitId        String @db.Uuid
+  unit          Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  shareBps      Int // CHECK >= 0
+  effectiveFrom String @db.Char(10)
+
+  @@unique([unitId, effectiveFrom])
+}
+
+model Owner {
+  id             String         @id @default(uuid()) @db.Uuid
+  orgId          String         @db.Uuid
+  org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  ownerId        String // "O-001"
+  name           String         @default("")
+  email          String         @default("") // synthetic, example.com (D-1)
+  ownerships     Ownership[]
+  grantedProxies Proxy[]        @relation("ProxyGrantor")
+  heldProxies    Proxy[]        @relation("ProxyHolder")
+  castBallots    BallotSecret[] @relation("SecretCaster")
+
+  @@unique([orgId, ownerId])
+}
+
+/// E-1: covers [fromDate, toDate); a null toDate is open.
+model Ownership {
+  id       String  @id @default(uuid()) @db.Uuid
+  unitId   String  @db.Uuid
+  unit     Unit    @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  ownerId  String  @db.Uuid
+  owner    Owner   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  fromDate String  @db.Char(10)
+  toDate   String? @db.Char(10)
+
+  @@unique([unitId, ownerId, fromDate])
+}
+
+/// Append-only by trigger (D-19, D-21). E-4: CHARGE + FINE − PAYMENT over entries dated <= the record date.
+model LedgerEntry {
+  id          String     @id @default(uuid()) @db.Uuid
+  unitId      String     @db.Uuid
+  unit        Unit       @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  entryId     String // "L-00001"
+  kind        LedgerKind
+  amountCents Int // CHECK >= 0
+  date        String     @db.Char(10)
+  memo        String     @default("")
+
+  @@unique([unitId, entryId])
+  @@index([unitId, date])
+}
+
+/// The meeting: its definition (rules + contests, the engine's schema), its salt, and — after close — its result.
+model Meeting {
+  id             String          @id @default(uuid()) @db.Uuid
+  orgId          String          @db.Uuid
+  org            Org             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  meetingId      String // "AM-2026"
+  title          String          @default("")
+  definition     Json // meeting.json as parsed by src/tally/rules.ts parseMeeting (D-35 a)
+  definitionHash String          @db.Char(64) // SHA-256 of the canonical JSON of `definition`
+  salt           String          @db.Char(32) // 128 random bits; unitHash = SHA-256(meeting id | unit id | salt) (D-20)
+  status         MeetingStatus   @default(OPEN)
+  closedAt       String?         @db.Char(19) // meeting-axis instant supplied by the closer (D-35 b)
+  sealedAt       DateTime?       @db.Timestamptz(6) // audit column written by the seal trigger (D-35 b)
+  totalUnits     Int? // frozen at close (D-35 h)
+  totalShareBps  Int? // frozen at close
+  merkleRoot     String?         @db.Char(64)
+  quorum         Json? // QuorumStatus at close
+  commitment     String?         @db.Char(64) // C-5 meeting commitment
+  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
+  proxies        Proxy[]
+  ballots        Ballot[]
+  results        ContestResult[]
+  secrets        BallotSecret[]
+
+  @@unique([orgId, meetingId])
+}
+
+/// Append-only (D-19). A later revocation is a Phase 3 seam (D-35 i).
+model Proxy {
+  id             String         @id @default(uuid()) @db.Uuid
+  meetingId      String         @db.Uuid
+  meeting        Meeting        @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  proxyId        String // "P-001"
+  grantorUnitId  String         @db.Uuid
+  grantorUnit    Unit           @relation(fields: [grantorUnitId], references: [id], onDelete: Restrict)
+  grantorOwnerId String         @db.Uuid
+  grantorOwner   Owner          @relation("ProxyGrantor", fields: [grantorOwnerId], references: [id], onDelete: Restrict)
+  holderOwnerId  String         @db.Uuid
+  holderOwner    Owner          @relation("ProxyHolder", fields: [holderOwnerId], references: [id], onDelete: Restrict)
+  receivedAt     String         @db.Char(19)
+  revokedAt      String?        @db.Char(19)
+  secrets        BallotSecret[]
+
+  @@unique([meetingId, proxyId])
+}
+
+/// What the engine needs after close and nothing else (D-20). No unit, no caster, no status: the label is the
+/// latest BallotStatusEvent (D-31). Append-only; inserted only by quorum_cast_ballot (D-33).
+model Ballot {
+  id               String              @id @default(uuid()) @db.Uuid
+  meetingId        String              @db.Uuid
+  meeting          Meeting             @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+  ballotId         String // "B-001", the public id in the published list
+  unitHash         String              @db.Char(64) // SHA-256(meeting id | unit id as cast | salt)
+  bpsAsOf          Int // the unit's share as of the record date; 0 for an unknown unit (D-32: stored, not published)
+  castAt           String              @db.Char(19)
+  viaProxy         Boolean // the Q-rules' direct/proxy flag
+  choicesCanonical String // C-1: the choices as cast, in canonical form; the receipt and the recount read this (one copy)
+  nonceHash        String              @db.Char(64) // SHA-256(nonce); the nonce itself is shown once and never stored (C-2)
+  receipt          String              @db.Char(64) // C-2
+  events           BallotStatusEvent[]
+  caused           BallotStatusEvent[] @relation("StatusCause")
+  secret           BallotSecret?
+
+  @@unique([meetingId, ballotId])
+  @@unique([meetingId, receipt])
+  @@index([meetingId, unitHash])
+}
+
+/// The only place a ballot's label lives (D-31). seq 1 at cast; seq 2 only ever by E-9. Append-only.
+model BallotStatusEvent {
+  id            BigInt       @id @default(autoincrement())
+  ballotId      String       @db.Uuid
+  ballot        Ballot       @relation(fields: [ballotId], references: [id], onDelete: Restrict)
+  seq           Int
+  status        BallotStatus
+  code          BallotCode? // null iff status = COUNTED (CHECK)
+  at            String       @db.Char(19) // the castAt of the ballot whose cast produced this label
+  causeBallotId String?      @db.Uuid // E-9: the owner's direct ballot that superseded this one
+  cause         Ballot?      @relation("StatusCause", fields: [causeBallotId], references: [id], onDelete: Restrict)
+
+  @@unique([ballotId, seq])
+}
+
+/// The sealed link (D-20): the only join from a ballot to its unit and caster. Written by quorum_cast_ballot;
+/// SELECT is revoked from quorum_app by the seal trigger at close. Ids as cast beside nullable FKs (D-35 e).
+model BallotSecret {
+  ballotId    String  @id @db.Uuid
+  ballot      Ballot  @relation(fields: [ballotId], references: [id], onDelete: Restrict)
+  meetingId   String  @db.Uuid
+  meeting     Meeting @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+  unitRef     String // the unit id as cast ("A-711" for an UNKNOWN_UNIT ballot)
+  unitId      String? @db.Uuid
+  unit        Unit?   @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  castByRef   String
+  castById    String? @db.Uuid
+  castBy      Owner?  @relation("SecretCaster", fields: [castById], references: [id], onDelete: Restrict)
+  viaProxyRef String  @default("")
+  viaProxyId  String? @db.Uuid
+  viaProxy    Proxy?  @relation(fields: [viaProxyId], references: [id], onDelete: Restrict)
+
+  @@index([meetingId, unitRef])
+}
+
+/// Per-contest result written once at close by quorum_close_meeting (D-33). Append-only.
+model ContestResult {
+  id         String  @id @default(uuid()) @db.Uuid
+  meetingId  String  @db.Uuid
+  meeting    Meeting @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+  contestId  String
+  tally      Json // the engine's ContestTally
+  commitment String  @db.Char(64) // C-4
+
+  @@unique([meetingId, contestId])
+}
