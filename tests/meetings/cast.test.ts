@@ -109,20 +109,24 @@ describe('2.4 castBallot', () => {
     expect(row.nonceHash).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it('at an instant that already holds a ballot, a minted id sorts after it and a supplied id that does not is CAST_OUT_OF_ORDER (D-40 amends D-36)', async () => {
+  it('at an instant where the SAME unit already has a ballot, a minted id sorts after it and a supplied id that does not is CAST_OUT_OF_ORDER (D-40 amends D-36)', async () => {
     const at = ts('2026-11-14T19:21:00');
     const first = await castBallot({ meetingRowId: replay.meetingRowId, ballotId: 'B-800000000000', unitId: 'A-102', castBy: 'O-002', viaProxyId: '', castAt: at, choices: {} });
-    for (let i = 0; i < 5; i++) {
+    let prev = first.ballotId;
+    for (let i = 0; i < 8; i++) {
       const next = await castBallot({ meetingRowId: replay.meetingRowId, unitId: 'A-102', castBy: 'O-002', viaProxyId: '', castAt: at, choices: {} });
-      expect(next.ballotId > first.ballotId, `${next.ballotId} after ${first.ballotId}`).toBe(true);
+      expect(next.ballotId > prev, `${next.ballotId} after ${prev}`).toBe(true);
+      prev = next.ballotId;
     }
+    // another unit at the same instant is unconstrained: its order against A-102's ballots changes no label
+    await castBallot({ meetingRowId: replay.meetingRowId, ballotId: 'B-000000000001', unitId: 'A-103', castBy: 'O-003', viaProxyId: '', castAt: at, choices: {} });
     const before = await db.ballot.count();
     await expect(castBallot({ meetingRowId: replay.meetingRowId, ballotId: 'B-100000000000', unitId: 'A-102', castBy: 'O-002', viaProxyId: '', castAt: at, choices: {} })).rejects.toBeInstanceOf(CastOutOfOrder);
     expect(await db.ballot.count()).toBe(before);
-    // and the stored labels still equal the engine over the stored set: B-4 order is (castAt, ballotId)
+    // and the stored labels still equal the engine over the stored set (B-4 order is (castAt, ballotId))
     const rows = await asApp((tx) => storedBallots(tx, replay.meetingRowId));
     const late = rows.filter((r) => r.cast_at === at);
-    expect(late).toHaveLength(6);
+    expect(late).toHaveLength(10);
     expect(late.every((r) => r.code === 'LATE')).toBe(true);
   });
 
@@ -131,7 +135,7 @@ describe('2.4 castBallot', () => {
     const before = await db.ballot.count();
     await expect(castBallot({ meetingRowId: replay.meetingRowId, unitId: 'A-101', castBy: 'O-001', viaProxyId: '', castAt: ts('2026-11-14T19:40:00'), choices: {} })).rejects.toBeInstanceOf(MeetingClosed);
     // the owner role, straight at the function: the function's own check
-    const direct = asOwner((tx) => tx.$queryRaw`SELECT quorum_cast_ballot(${replay.meetingRowId}::uuid, 'B-999', ${'a'.repeat(64)}, 0, '2026-11-14T19:40:00', false, '{}', ${'b'.repeat(64)}, ${'c'.repeat(64)}, NULL::"BallotCode", NULL::uuid, 'A-101', NULL::uuid, 'O-001', NULL::uuid, '', NULL::uuid)`);
+    const direct = asOwner((tx) => tx.$queryRaw`SELECT quorum_cast_ballot(${replay.meetingRowId}::uuid, 'B-999', ${'a'.repeat(64)}, 0, '2026-11-14T19:40:00', false, '{}', ${'b'.repeat(64)}, ${'c'.repeat(64)}, NULL::"BallotCode", NULL::uuid, 'A-101', NULL::uuid, 'O-001', NULL::uuid, '', NULL::uuid, NULL::uuid)`);
     await expect(direct).rejects.toBeInstanceOf(MeetingClosed);
     // the owner role, straight at the table: the trigger
     const insert = asOwner((tx) => tx.ballot.create({ data: { meetingId: replay.meetingRowId, ballotId: 'B-999', unitHash: 'a'.repeat(64), bpsAsOf: 0, castAt: '2026-11-14T19:40:00', viaProxy: false, choicesCanonical: '{}', nonceHash: 'b'.repeat(64), receipt: 'c'.repeat(64) } }));
@@ -145,15 +149,16 @@ describe('2.4 castBallot', () => {
 });
 
 describe('D-40 mintBallotId', () => {
-  it('draws B-<12 hex> and re-draws until the id sorts after the one it must exceed', () => {
-    const draws = ['000000000001', '7fffffffffff', 'a00000000000'];
-    let i = 0;
-    expect(mintBallotId('B-800000000000', () => draws[i++]!)).toBe('B-a00000000000');
-    expect(i).toBe(3);
+  it('draws B-<12 hex>; with a bound, draws from the ids above it, never one below', () => {
+    expect(mintBallotId(null, () => '0123456789ab')).toBe('B-0123456789ab');
     expect(mintBallotId(null)).toMatch(BALLOT_ID_RE);
+    expect(mintBallotId('B-800000000000', () => '000000000000')).toBe('B-800000000001');
+    expect(mintBallotId('B-800000000000', () => '7ffffffffffe')).toBe('B-ffffffffffff');
+    expect(mintBallotId('B-fffffffffffe', () => 'abcdefabcdef')).toBe('B-ffffffffffff');
+    for (let i = 0; i < 200; i++) expect(mintBallotId('B-f00000000000') > 'B-f00000000000').toBe(true);
   });
-  it('refuses after 64 draws that never sort after the bound, and refuses a malformed draw', () => {
-    expect(() => mintBallotId('B-ffffffffffff', () => '000000000000')).toThrow(/64 draws/);
+  it('refuses when no id sorts after the bound, and refuses a malformed draw', () => {
+    expect(() => mintBallotId('B-ffffffffffff', () => '000000000000')).toThrow(CastOutOfOrder);
     expect(() => mintBallotId(null, () => 'XYZ')).toThrow(/B-<12 hex>/);
   });
 });

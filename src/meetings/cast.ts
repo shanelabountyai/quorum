@@ -11,6 +11,7 @@ import type { BallotRejectCode, BallotStatus } from '@/tally/codes';
 import { canonicalChoices, receiptFor } from '@/tally/commit';
 import { timestamp, type Timestamp } from '@/tally/time';
 import type { Ballot } from '@/tally/types';
+import { assertNotArchived } from './archive';
 import { asApp, type Tx } from './db';
 import { CastOutOfOrder, MeetingClosed } from './errors';
 import { currentLabels } from './labels';
@@ -27,6 +28,8 @@ export type CastInput = {
   viaProxyId: string;
   castAt: Timestamp;
   choices: Record<string, Json>;
+  /** D-39 (b): the user who entered it (the owner's linked user, or the desk operator); sealed with the link, never audited by name */
+  enteredById?: string | null;
 };
 
 export type CastResult = {
@@ -40,21 +43,24 @@ export type CastResult = {
   supersededRowId: string | null;
 };
 
-/** D-40: a public ballot id is "B-" + 12 lowercase hex chars (48 bits from crypto). */
+/** D-40: a public ballot id is "B-" + 12 lowercase hex chars (48 bits from crypto). Lexical order = numeric order. */
 export const BALLOT_ID_RE = /^B-[0-9a-f]{12}$/;
-const MINT_TRIES = 64;
+const ID_TOP = (1n << 48n) - 1n;
 
 /**
- * A fresh random id; when the instant already holds ballots, one that sorts after the highest of them (D-40 / D-36),
- * re-drawn until it does. Expected ≤ 2 draws; 64 failures would mean the generator is broken, and the cast refuses.
+ * A fresh random id (D-40). When the same unit already has a ballot at this instant, the id is drawn uniformly
+ * (up to a negligible modulo bias) from the ids that sort after the highest of them, so B-4's (cast_at, ballot_id)
+ * order stays the arrival order for that unit — the only order the labels depend on. Refuses only when no id is left.
  */
 export function mintBallotId(mustExceed: string | null, draw: () => string = () => randomBytes(6).toString('hex')): string {
-  for (let i = 0; i < MINT_TRIES; i++) {
-    const id = `B-${draw()}`;
-    if (!BALLOT_ID_RE.test(id)) throw new Error(`minted ballot id ${id} is not B-<12 hex> (D-40)`);
-    if (mustExceed === null || compareStrings(id, mustExceed) > 0) return id;
-  }
-  throw new Error(`could not mint a ballot id after ${mustExceed} in ${MINT_TRIES} draws (D-40)`);
+  const raw = draw();
+  if (!/^[0-9a-f]{12}$/.test(raw)) throw new Error(`minted ballot id B-${raw} is not B-<12 hex> (D-40)`);
+  const r = BigInt(`0x${raw}`);
+  if (mustExceed === null) return `B-${raw}`;
+  if (!BALLOT_ID_RE.test(mustExceed)) throw new CastOutOfOrder('(a minted id)', `${mustExceed}, which is not a B-<12 hex> id`);
+  const lo = BigInt(`0x${mustExceed.slice(2)}`) + 1n;
+  if (lo > ID_TOP) throw new CastOutOfOrder('(a minted id)', `${mustExceed}: no id sorts after it (D-40)`);
+  return `B-${(lo + (r % (ID_TOP - lo + 1n))).toString(16).padStart(12, '0')}`;
 }
 
 /** D-20: the unit's name under the meeting's salt; deterministic, so duplicate detection needs no sealed link. */
@@ -71,22 +77,24 @@ export async function castInTx(tx: Tx, input: CastInput, nonce: string): Promise
   const [lock] = await tx.$queryRaw<{ closedAt: string | null }[]>`SELECT "closedAt" FROM quorum_lock_meeting(${input.meetingRowId}::uuid)`;
   if (lock?.closedAt) throw new MeetingClosed('P0001', `meeting ${input.meetingRowId} is closed; no ballot can be recorded (D-34)`);
   const head = await readMeeting(tx, input.meetingRowId);
+  await assertNotArchived(tx, head.orgId); // D-43
   const rules = head.definition.rules;
   // D-36: castAt is monotone per meeting, so the stored set is in B-4 order and the labels written here are the
   // ones evaluateBallots would compute over the same set. A ballot from the past is refused before any read of it.
   const castAt = timestamp(input.castAt, 'castAt'); // validated before it is compared with anything
   const [latest] = await tx.$queryRaw<{ at: string | null }[]>`SELECT max("castAt") AS at FROM "Ballot" WHERE "meetingId" = ${head.id}::uuid`;
   if (latest?.at && castAt < latest.at) throw new CastOutOfOrder(castAt, latest.at);
-  // D-40 amends D-36: ids are random, so at an instant that already has ballots the new id must sort after them
-  // (B-4 orders equal instants by id). Compared in JS with the engine's own string order, not the database collation.
-  const sameInstant = latest?.at === castAt ? (await tx.ballot.findMany({ where: { meetingId: head.id, castAt }, select: { ballotId: true } })).map((r) => r.ballotId) : [];
+  // D-40 amends D-36: ids are random. The labels depend on order only WITHIN a unit (counted_units is per unit; no
+  // other rule reads another ballot), so the guard is: the same unit's ballots at this same instant must sort before
+  // the new id (B-4 orders equal instants by id). Compared in JS with the engine's string order, not the collation.
+  const unitHash = unitHashFor(head.id, input.unitId, head.salt);
+  const sameInstant = latest?.at === castAt ? (await tx.ballot.findMany({ where: { meetingId: head.id, castAt, unitHash }, select: { ballotId: true } })).map((r) => r.ballotId) : [];
   const highest = sameInstant.reduce<string | null>((m, id) => (m === null || compareStrings(id, m) > 0 ? id : m), null);
 
   // 2. the roster as of the record date, and the unit's current counted ballot
   const roster = await readRoster(tx, head.orgId);
   const proxies = await readProxies(tx, head.id);
   const engineRoster = buildRoster(rules, roster.units, roster.ownerships, roster.ledger, proxies);
-  const unitHash = unitHashFor(head.id, input.unitId, head.salt);
   const labels = await currentLabels(tx, head.id);
   const sameUnit = await tx.ballot.findMany({ where: { meetingId: head.id, unitHash } });
   const countedRows = sameUnit.filter((b) => labels.get(b.id)?.status === 'COUNTED');
@@ -121,7 +129,8 @@ export async function castInTx(tx: Tx, input: CastInput, nonce: string): Promise
       ${head.id}::uuid, ${ballotId}, ${unitHash}, ${bps}, ${input.castAt}, ${input.viaProxyId !== ''},
       ${canonical}, ${sha256Hex(nonce)}, ${receipt},
       ${code === '' ? null : code}::"BallotCode", ${supersedes}::uuid,
-      ${input.unitId}, ${unitRow?.id ?? null}::uuid, ${input.castBy}, ${ownerRow?.id ?? null}::uuid, ${input.viaProxyId}, ${proxyRow?.row_id ?? null}::uuid
+      ${input.unitId}, ${unitRow?.id ?? null}::uuid, ${input.castBy}, ${ownerRow?.id ?? null}::uuid, ${input.viaProxyId}, ${proxyRow?.row_id ?? null}::uuid,
+      ${input.enteredById ?? null}::uuid
     ) AS id`;
   return { rowId: row!.id, ballotId, receipt, nonce, status: code === '' ? 'COUNTED' : 'REJECTED', code, supersededRowId: supersedes };
 }
