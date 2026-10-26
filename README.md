@@ -2,7 +2,7 @@
 
 Build Log #21. Elections with ballots, quorum, weighted votes by unit share, proxies without chains, resolution thresholds as data, ties left unbroken, and a secret ballot whose tally anyone can recount. Sample business: "Larkspur Commons," a synthetic 120-unit condominium association.
 
-> Cloned from saas-foundation v1.3.0. Port 7200. Upgrade with `npm run foundation:status`; template-owned paths are listed in the template's plan §3.2.
+> Cloned from saas-foundation v1.3.0. Port 6200. Upgrade with `npm run foundation:status`; template-owned paths are listed in the template's plan §3.2.
 
 ## ⚠️ Scope Honesty (read first)
 
@@ -43,6 +43,6 @@ The fixture numbers are the oracle's answers on the generator's own defects, by 
 
 ## Foundation
 
-Needs Node 22 and a local Postgres 17. `npm ci`, `npm run db:setup` (creates `quorum` and `quorum_test`, writes `.env.local`/`.env.test` with `?connection_limit=10&pool_timeout=20`), `npm run seed:demo`, `npm run dev` on :7200. Design and decisions of the template: `FOUNDATION_SPEC.md`; milestones: `IMPLEMENTATION_PLAN.md`; releases: `CHANGELOG.md`.
+Needs Node 22 and a local Postgres 17. `npm ci`, `npm run db:setup` (creates `quorum` and `quorum_test`, writes `.env.local`/`.env.test` with `?connection_limit=10&pool_timeout=20`), `npm run seed:demo`, `npm run dev` on :6200. Design and decisions of the template: `FOUNDATION_SPEC.md`; milestones: `IMPLEMENTATION_PLAN.md`; releases: `CHANGELOG.md`.
 
 Billing is removed by the template's manifest (D-27); share links are core and left unwired; notifications stay (meeting and violation notices are queued to the outbox and never sent). Legal pages are stubs and not legal advice.
