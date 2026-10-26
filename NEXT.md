@@ -36,4 +36,5 @@ Kickoff measurements (reference tally on the frozen fixtures, after the D-26 reg
 | 2026-10-26 | e9714fe (Phase 1 engine + docs) | https://github.com/shanelabountyai/quorum/actions/runs/40260974830 | **red** — `foundation:drift`: shallow checkout had no `v1.3.0` tag (origin has no tags; the proxy refuses tag pushes). Fixed in 1755c14/7a3520a |
 | 2026-10-26 | 1755c14 | https://github.com/shanelabountyai/quorum/actions/runs/40261187177 | cancelled (superseded by 7a3520a) |
 | 2026-10-26 | 7a3520a (CI tags the release commit before drift) | https://github.com/shanelabountyai/quorum/actions/runs/40261257481 | **green** — ci and modules-removed |
+| 2026-10-26 | 2a9de88 (docs; the final Phase 1 head) | https://github.com/shanelabountyai/quorum/actions/runs/40262028224 | **green** |
 | 2026-10-26 | d42a1c8 on throwaway branch `ci-proof-1-14` (E1,UNITS,C-01 45→46 in `expected_totals.csv`) | https://github.com/shanelabountyai/quorum/actions/runs/40261860620 | **red** on `tally:eval`, as task 1.14 requires. The branch could not be deleted from the cloud (proxy 403); Shane deletes it |
