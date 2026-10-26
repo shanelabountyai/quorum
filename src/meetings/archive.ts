@@ -18,14 +18,16 @@ export class OrgArchived extends Refused {
 export const ARCHIVED_REFUSAL = 'This association is archived. An archived association is kept, not deleted.';
 export const HISTORY_REFUSAL = 'This association has voting or ledger history, which is append-only and cannot be deleted. Archive it instead.';
 
-/** History = any Meeting, LedgerEntry or Unit row: the rows the append-only triggers protect, or their parents. Task 3.6 adds Violation. */
-export async function orgHistory(tx: Tx, orgId: string): Promise<{ meetings: number; units: number; ledgerEntries: number }> {
-  const [meetings, units, ledgerEntries] = await Promise.all([
+/** History = any Meeting, Unit, LedgerEntry, DuesRun or Violation row: the rows the append-only triggers protect, or their parents. */
+export async function orgHistory(tx: Tx, orgId: string): Promise<{ meetings: number; units: number; ledgerEntries: number; duesRuns: number; violations: number }> {
+  const [meetings, units, ledgerEntries, duesRuns, violations] = await Promise.all([
     tx.meeting.count({ where: { orgId } }),
     tx.unit.count({ where: { orgId } }),
     tx.ledgerEntry.count({ where: { unit: { orgId } } }),
+    tx.duesRun.count({ where: { orgId } }),
+    tx.violation.count({ where: { orgId } }),
   ]);
-  return { meetings, units, ledgerEntries };
+  return { meetings, units, ledgerEntries, duesRuns, violations };
 }
 
 export const hasHistory = (h: Awaited<ReturnType<typeof orgHistory>>) => Object.values(h).some((n) => n > 0);
