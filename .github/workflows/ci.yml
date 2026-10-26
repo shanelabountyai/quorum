@@ -54,6 +54,12 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      # origin carries no tags (the cloud session's proxy refuses tag pushes, 403); until Shane pushes v1.3.0 from the
+      # Mac, name the release commit by its message so drift has its base. Fails loudly if the commit is not found.
+      - run: |
+          v="$(cat FOUNDATION_VERSION)"
+          git rev-parse -q --verify "refs/tags/$v" >/dev/null || git tag "$v" "$(git log --all --grep="^Release $v:" --format=%H -n 1)"
+          git rev-parse -q --verify "refs/tags/$v^{commit}" >/dev/null
       - run: npm run foundation:drift
       # Phase 1 gate (docs/phase-1-tasks.md 1.14): the frozen fixtures, the pure engine, the oracle agreement.
       # fixtures:check runs AFTER tally:eval so a product-code write into fixtures/ fails the run (task 1.2).
