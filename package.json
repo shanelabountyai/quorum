@@ -37,6 +37,7 @@
     "tally:recount": "tsx scripts/tally-recount.ts",
     "tally:lint": "tsx scripts/tally-lint.ts",
     "quorum:load": "dotenv -e .env.local -- tsx scripts/quorum-load.ts",
+    "db:roles": "dotenv -e .env.local -- tsx scripts/quorum-roles.ts",
     "fixtures:check": "python3 -I tools/verify_fixtures.py && python3 -I tools/golden_answers.py && git diff --exit-code fixtures/ && test -z \"$(git status --porcelain fixtures/)\""
   },
   "dependencies": {
