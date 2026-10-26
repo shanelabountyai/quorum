@@ -66,3 +66,16 @@ The D-24 wording applies unchanged: these are the oracle's answers on the genera
 ## Not generated, not measured
 
 Write-in candidates, cumulative voting, proxies with instructions, revocation by a later proxy, a combined ballot for an owner of two units, malformed JSON ballots, time-zone boundary cases, a meeting that fails quorum, a resolution tie (GT-10 only), real bylaws text. The share in basis points can partially identify rare share values (151 bps = 4 penthouse units); stated, not solved.
+
+## Decisions pass (owner decisions 2026-10-26) — re-proved before Phase 3
+
+D-37 (`bps_as_of` published) and D-40 (random ballot ids) regenerated the fixtures (`--seed 20261025`, twice, 15/15 identical hashes; brief §12). **Every total, quorum figure and result is unchanged** (113 / 87 / 26; `expected_totals.csv` byte-identical); the ids, receipts, root and commitments moved: root `5214cb0f…35f5d`, meeting commitment `3e6f583c…37e9`. `tally:eval` 0 differences; `tally:eval:db` 0 differences, the export byte-equal to the new `published_ballots.csv`; `tally:recount` **45 match, 0 differ, 1 not recomputable** (the direct/proxy split). GQ-12 (D-41, `CREDIT`) passes in Python and TypeScript. CI green on 94c9e22 (run 40345975273) and 0e17929 (run 40348272725, `migrate diff` empty after the D-39/D-43 migration).
+
+## Phase 3 — screens, dues ledger, violations
+
+Measured 2026-10-26. The same D-24 wording applies: these are the engine's answers on synthetic rows.
+
+- **Dues run (D-21, D-47)** on the fixture roster, December 2026: $35,000.00 → 120 charges, 3,500,000 cents, ROUNDING 0; $35,000.01 → ROUNDING 1 cent; $35,001.00 → 3,500,024 cents charged, ROUNDING **76 cents** (24 units of 100+ bps take one cent each; the draft's "1 cent" was arithmetic error). A month posts once; a run that does not sum to its budget is refused by a CHECK. Every page balance equals `balanceCents` (E-4) over the same rows; the delinquent set as of 2026-11-14 is A-110, A-204, A-508, B-108, B-509.
+- **Violations (D-22)**: 6 legal edges allowed, 19 illegal state pairs plus free-text states `TRANSITION_INVALID` (28 pure tests); on tables, notice → hearing → continued → hearing → fine posts `F-V-2026-001` ($150.00) to B-203 in the same transaction and its statement shows it (balance $150.00, delinquent).
+- **Casting from pages (D-39)**: a homeowner linked by invite (email match) casts, receipt = C-2 over what was cast, second ballot for the unit `DUPLICATE_UNIT`; the desk casts for another owner with the operator in `BallotSecret.enteredById`; four `ballot.cast` audit rows carry only `{channel}` and the meeting id; the meeting notice queued to **137** owners of record (138 less A-407's seller), 0 sent; close on the wall clock; the results recount equals the stored result; the receipt check recomputes with the nonce.
+- `npm test`: **458 tests, 52 files** (local Postgres 16). INV-01..04/22 harness green over all 20 new actions. `npm run test:e2e`: **15 passed of 15 listed** (local, production build, Chromium from `/opt/pw-browsers`), axe **0 violations** on 17 page states × 2 colour schemes.

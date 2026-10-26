@@ -1,10 +1,22 @@
 # NEXT
 
-## ▶ Next session: Shane reviews the Phase 2 PR and the open items; Phase 3 only after that
+## ▶ Next session: Shane reviews PR #1 (Phase 3 gate reached); `docs/CLOSEOUT.md` is the by-hand list
 
-Branch `kickoff`, PR #1 (`kickoff` → `main`, https://github.com/shanelabountyai/quorum/pull/1), **never merged by the agent**. Phase 2 exit criteria are met (see the gate output below and `docs/EVAL.md` §Phase 2). `docs/phase-3-tasks.md` is a draft at the gate; nothing of Phase 3 is built (no pages, no server actions, no ledger run, no violations).
+Branch `kickoff`, PR #1 (`kickoff` → `main`, https://github.com/shanelabountyai/quorum/pull/1), **never merged by the agent**. The PRD names no Phase 4; `docs/CLOSEOUT.md` is the closeout draft.
 
-**To decide before Phase 3:** O-11 (per-meeting seal by row-level security vs the table-wide `REVOKE` of D-33), and the five questions in `docs/phase-3-tasks.md` item 3.0 (how a `User` becomes an `Owner` in the UI; ballot id minting; `CREDIT` in the ledger and in E-4; the deployment role for `quorum_app`). Still open from Phase 1: O-10 (kept as D-32 for Phase 2), the stale pre-D-26 numbers in the PRD / overlap / D-15.
+**2026-10-26 (third build session, unattended, cloud) — owner decisions applied, then Phase 3 tasks 3.1–3.9.**
+- Decisions recorded as owner decisions **D-37..D-43** (O-10, O-11 closed): D-37 `bps_as_of` on the published list; D-38 keep the table-wide REVOKE; D-39 `OwnerLink` written by a trigger on `Invite` acceptance (email match) + the desk path with the operator in `BallotSecret.enteredById`; D-40 random public ballot ids `B-<12 hex>` (fixtures mint from the seed, the write layer from `crypto`; the same-instant id guard is per unit); D-41 `CREDIT` in E-4 + GQ-12; D-42 `quorum_web` LOGIN role (`npm run db:roles`, `docs/deploy-roles.md`); D-43 archive, never delete (`OrgArchive`, `beforeOrgDelete` refuses, trigger second door).
+- **Fixtures regenerated** (D-37 + D-40, one regeneration, seed 20261025, twice → identical): totals/quorum/results unchanged; new hashes in brief §12 (ballots `f0a121ac…`, published `8439d208…`, MANIFEST `59e5d43d…`); root `5214cb0f…35f5d`, meeting commitment `3e6f583c…37e9`. Re-proved before Phase 3: `tally:eval` 0 diffs, `tally:eval:db` 0 diffs (export byte-equal), `tally:recount` 45 match / 0 differ / 1 n/a, GQ-12 green in both languages.
+- Phase 3 built: meetings/vote/desk/results/published.csv, roster, ledger (dues run with ROUNDING, statements, payments, credits, reversals), violations (machine as data), archive, `/associations`, notices queued never sent (cron no longer drains, D-44). Session defaults **D-44..D-53**.
+- **Contradiction found:** the Phase 3 draft's "$35,001 posts a 1-cent ROUNDING line" is 76 cents by hand; 1 cent is $35,000.01 (D-47). A first D-40 guard (meeting-wide re-draw) exhausted its id space in its own test and was replaced one commit later (per-unit guard, interval draw).
+
+**Gate output (local, 2026-10-26):** `npm test` 458 passed (52 files); `npm run test:e2e` 15 passed of 15 listed, axe 0 violations on 17 page states × light/dark; `lint` 0 problems; `typecheck` clean; `foundation:drift` clean (modules removed: billing); `tally:eval`, `tally:eval:db`, `fixtures:check`, `tally:lint` OK. CI green on the Phase 3 code head 35d3ab9 (run 40355829930); table below.
+
+**Sandbox this session:** everything ran locally — `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true npx prisma generate`, migrations applied with `psql -f`, and **Playwright with the preinstalled Chromium at `/opt/pw-browsers`** (so e2e and axe ran before every push). Still CI-only: `prisma migrate deploy` / `migrate diff`. axe-core is used from the lockfile (transitive), no dependency added.
+
+**By hand (Shane):** see `docs/CLOSEOUT.md` §By hand.
+
+---
 
 **2026-10-26 (second build session, unattended, cloud) — Phase 2 done, tasks 2.0–2.11.** Built: `prisma/schema/quorum.prisma` (11 models) + `prisma/migrations/20261026000000_quorum_init/migration.sql` (hand-written: D-8 CHECKs, 6 append-only triggers, the `Meeting` guard, the seal trigger that `REVOKE`s `SELECT` on `BallotSecret` and stamps `sealedAt`, the `quorum_app` role and grants, `quorum_lock_meeting` / `quorum_cast_ballot` / `quorum_close_meeting` as `SECURITY DEFINER`, the billing tables dropped); `src/meetings/` (9 files: `db` — `asApp()` with `SET LOCAL ROLE quorum_app`; `errors` — typed refusals mapped from `meta.driverAdapterError.cause`; `load`, `roster`, `labels`, `cast`, `close` (close + recount), `published`, `eligibility`); `src/tally/tally.ts` gained `resultsFromStored` + `tallyFromResults` (pure; `tally()` now ends in it); `scripts/quorum-load.ts`, `scripts/tally-eval-db.ts`; `tests/meetings/` (6 files, 40 tests) + `tests/tally/stored.test.ts` (5); CI: `prisma migrate diff --from-migrations --to-schema --exit-code` (posts a non-empty diff on the PR), `tally:eval:db`. Decided: D-31..D-36, O-11 (`docs/decisions.md`). Departures from the draft are written into `docs/phase-2-tasks.md` beside the item.
 
@@ -38,3 +50,8 @@ Branch `kickoff`, PR #1 (`kickoff` → `main`, https://github.com/shanelabountya
 | 2026-10-26 | eef403d (PR-comment channel) | https://github.com/shanelabountyai/quorum/actions/runs/40321120165 | **red** — same step; its output reached PR #1 as a comment |
 | 2026-10-26 | 2b06d27 (`SHADOW_DATABASE_URL`) | https://github.com/shanelabountyai/quorum/actions/runs/40321741300 | **green** — `migrate diff` empty: the hand-written migration equals the schema; schema/enum/append-only/role tests green on Postgres 17 |
 | 2026-10-26 | 9dae511 (2.3–2.9: load, cast, close, recount, tamper, eval:db, eligibility — the Phase 2 code head) | https://github.com/shanelabountyai/quorum/actions/runs/40322626626 | **green** — `tally:eval:db` 113/87/26, 0 differences; 380 tests; e2e; `migrate diff` empty. The docs commit after it is skipped by `paths-ignore` |
+| 2026-10-26 | 94c9e22 (decisions pass: D-37/D-40/D-41, regenerated fixtures) | https://github.com/shanelabountyai/quorum/actions/runs/40345975273 | **green** |
+| 2026-10-26 | 0e17929 (D-39/D-42/D-43 schema, roles) | https://github.com/shanelabountyai/quorum/actions/runs/40348272725 | **green** — `migrate diff` empty |
+| 2026-10-26 | 98e85f6 (Phase 3 3.1–3.7) | https://github.com/shanelabountyai/quorum/actions/runs/40353005303 | **red** — `playwright test`: the template's `onboarding.spec.ts` expected the template's empty org home, which 3.1 replaced; fixed in 35d3ab9 |
+
+| 2026-10-26 | 35d3ab9 (3.8 e2e + axe, onboarding fix — the Phase 3 code head) | https://github.com/shanelabountyai/quorum/actions/runs/40355829930 | **green** — lint, typecheck, drift, tally:eval, fixtures:check, migrate deploy + diff, tally:eval:db, vitest, 15 e2e with axe; modules-removed green |
