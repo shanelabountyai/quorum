@@ -9,6 +9,7 @@ import { BALLOT_REJECT_CODES } from '@/tally/codes';
 import { asApp, asOwner } from '@/meetings/db';
 import { AppendOnlyViolation, CheckViolation, PrivilegeDenied } from '@/meetings/errors';
 import { resetAuthTables } from '../helpers/auth';
+import { emptyDatabase } from '../../scripts/tally-eval-db';
 
 const QUORUM_TABLES = ['Unit', 'UnitShare', 'Owner', 'Ownership', 'LedgerEntry', 'Meeting', 'Proxy', 'Ballot', 'BallotStatusEvent', 'BallotSecret', 'ContestResult'];
 const APPEND_ONLY = ['Ballot', 'BallotStatusEvent', 'BallotSecret', 'Proxy', 'LedgerEntry', 'ContestResult'];
@@ -102,6 +103,7 @@ describe('2.2 append-only triggers', () => {
 
 describe('D-33 the application role', () => {
   it('quorum_app exists, NOLOGIN, and cannot INSERT into Ballot, BallotSecret, BallotStatusEvent or ContestResult', async () => {
+    await emptyDatabase(); // lifts a seal left by an earlier file's close (D-33: the REVOKE outlives TRUNCATE)
     const [role] = await db.$queryRaw<{ rolcanlogin: boolean }[]>`SELECT rolcanlogin FROM pg_roles WHERE rolname = 'quorum_app'`;
     expect(role).toEqual({ rolcanlogin: false });
     const grants = await db.$queryRaw<{ t: string; p: string }[]>`SELECT table_name AS t, privilege_type AS p FROM information_schema.role_table_grants WHERE grantee = 'quorum_app' ORDER BY 1, 2`;

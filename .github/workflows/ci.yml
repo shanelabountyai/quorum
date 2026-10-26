@@ -90,6 +90,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/quorum_shadow # prisma.config.ts reads it (Prisma 7 has no --shadow-database-url flag)
+      # Phase 2 gate (docs/phase-2-tasks.md 2.9): the same 113 ballots through the cast path, close, the recount from
+      # Ballot rows, diffed against the same expected files; then the whole suite, tamper tests included.
+      - run: npm run tally:eval:db
       - run: npx vitest run
       # Production build, served — the way it ships. login.spec.ts drives a real page.
       - run: npx playwright install --with-deps chromium

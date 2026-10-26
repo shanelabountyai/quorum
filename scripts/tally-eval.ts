@@ -58,8 +58,13 @@ export function report(res: MeetingTally): string {
   return out.join('\n');
 }
 
-/** The first difference between the engine and the four expected files, as "file: where: got X, expected Y"; null when none. */
-export function firstDiff(res: MeetingTally, dir = FIXTURES_DIR): string | null {
+/**
+ * The first difference between the engine and the four expected files, as "file: where: got X, expected Y"; null
+ * when none. `stored` is the database half (task 2.9): the rows D-20 keeps carry no unit id, so that column is
+ * not compared there — everything else (status, code, bps, receipt, selection codes, every total, result and
+ * commitment, the quorum report) is.
+ */
+export function firstDiff(res: MeetingTally, dir = FIXTURES_DIR, opts: { stored?: boolean } = {}): string | null {
   const diff = (file: string, where: string, got: string, want: string | undefined) => (got === (want ?? '') ? null : `${file}: ${where}: got ${JSON.stringify(got)}, expected ${JSON.stringify(want ?? '')}`);
   // ballots
   const byId = new Map(res.ballot_results.map((r) => [r.ballot_id, r]));
@@ -73,6 +78,7 @@ export function firstDiff(res: MeetingTally, dir = FIXTURES_DIR): string | null 
       .map((cid) => `${cid}:${r.selections[cid]!.status}${r.selections[cid]!.code ? ':' + r.selections[cid]!.code : ''}`)
       .join(';');
     for (const [col, got] of [['unit_id', r.unit_id], ['status', r.status], ['code', r.code], ['bps', String(r.bps)], ['receipt', r.receipt], ['selection_codes', codes]] as const) {
+      if (col === 'unit_id' && opts.stored) continue;
       const d = diff('expected_ballots.csv', `${e.ballot_id}.${col}`, got, e[col]);
       if (d) return d;
     }
