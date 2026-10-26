@@ -23,7 +23,7 @@ Quorum treats the meeting as a tally with a rule for every one of those question
 
 ## Goals
 
-1. **Every ballot gets exactly one of a closed set of outcomes, with its reason.** `COUNTED`, or one of fourteen reject codes in a stated precedence; the voter sees which, and so does anyone reading the published list.
+1. **Every ballot gets exactly one of a closed set of outcomes, with its reason.** `COUNTED`, or one of fifteen reject codes in a stated precedence; the voter sees which, and so does anyone reading the published list.
 2. **The tally is deterministic and pure.** `src/tally/` imports no database, clock, randomness, network or model client; the same ballots in any order give the same totals and the same commitment, proven on the fixture by shuffling.
 3. **Individual and tally verifiability**, as defined above, with the limits stated: a receipt the voter can find in the Merkle root; a published anonymized list anyone can recount to the same commitment.
 4. **The application cannot link a ballot to a voter after close.** The link lives in one sealed table; a trigger revokes the application role's read at close; a tamper test proves the read fails and the recount still matches.

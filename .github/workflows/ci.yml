@@ -29,7 +29,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/quorum_test?connection_limit=10&pool_timeout=20
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/quorum_test?connection_limit=10&pool_timeout=20
       AUTH_SECRET: ci-only-secret-not-for-real-use-0123456789abc
-      APP_URL: http://localhost:7200
+      APP_URL: http://localhost:6200
       # D-8: the engine compares calendar strings and must give the same answer in any process zone. A UTC-only
       # runner would hide exactly the bug the string axis exists to prevent, so the whole job runs in Chicago.
       TZ: America/Chicago
