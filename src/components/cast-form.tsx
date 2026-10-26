@@ -3,7 +3,7 @@
 // shows the receipt, the ballot id and the nonce ONCE — they are not stored anywhere the voter can come back to
 // (the nonce is never stored at all, C-2) — with the D-2 sentence. A rejected ballot shows its code and its receipt:
 // it was received, it is in the root, and it is published with that code (D-11).
-import { useActionState } from 'react';
+import { useActionState, useId } from 'react';
 
 export type ContestField =
   | { kind: 'ELECTION'; contestId: string; title: string; seats: number; candidates: { id: string; name: string }[] }
@@ -13,12 +13,13 @@ type Receipt = { ballotId: string; receipt: string; nonce: string; status: strin
 
 export function CastForm({ action, contests, limit, children }: { action: (form: FormData) => Promise<unknown>; contests: ContestField[]; limit: string; children?: React.ReactNode }) {
   const [state, submit, pending] = useActionState(async (_: unknown, form: FormData) => action(form), null);
+  const hid = useId();
   const error = state && typeof state === 'object' && 'error' in state ? String((state as { error: unknown }).error) : null;
   const r = state && typeof state === 'object' && 'receipt' in state ? ((state as { receipt: Receipt }).receipt) : null;
   if (r) {
     return (
-      <section aria-labelledby="receipt-h" role="status">
-        <h2 id="receipt-h">{r.status === 'COUNTED' ? 'Ballot counted' : `Ballot received and rejected: ${r.code}`}</h2>
+      <section aria-labelledby={hid} role="status">
+        <h2 id={hid}>{r.status === 'COUNTED' ? 'Ballot counted' : `Ballot received and rejected: ${r.code}`}</h2>
         <dl>
           <dt>Meeting</dt><dd>{r.meetingId}</dd>
           <dt>Cast at</dt><dd>{r.castAt}</dd>
