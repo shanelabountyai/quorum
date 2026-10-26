@@ -24,7 +24,7 @@ Suggested card chips once it ships: `one unit, one ballot (14 reject codes)` · 
 | Dates as calendar strings; no `new Date(string)`, no `@db.Date`; CI under a non-UTC TZ | Bookable | its CLAUDE.md date rules | D-8 timestamps; `TZ=America/Chicago` in CI |
 | Append-only tables with UPDATE/DELETE triggers as hand-written SQL | Gridline, Housefile, Gavel | Housefile D-6 migrations | Ballots, proxies, secrets, ledger, violation events (D-19) |
 | Row-level security / role-scoped grants in migrations | Gavel (settlement), foundation `authz` | Gavel's clone migrations; foundation `src/core/authz` | The close-time `REVOKE SELECT` on `BallotSecret` (D-20); read Gavel's role SQL first |
-| Closed vocabularies as data; no expressions | Adjuster | its D1 reasoning | Rules JSON, six bases, two modes, fourteen codes (D-16) |
+| Closed vocabularies as data; no expressions | Adjuster | its D1 reasoning | Rules JSON, six bases, two modes, fifteen codes (D-16, D-26) |
 | State machine with an event per transition, illegal transitions refused | BoxLoop (subscription states), Adjuster (claim states) | BoxLoop `src/billing/` state tables | `Violation` / `ViolationEvent` (D-22) |
 | Frozen fixtures + stdlib Python oracle + golden answers + manifest | Housefile, Gavel | `tools/`, `fixtures/samples/` | Same workflow (`build_fixtures.py`, `reference_tally.py`, `golden_answers.py`, `verify_fixtures.py`) |
 | Outbox notices queued, never sent | callboard / showcall | templates registered into notifications at runtime | Meeting and violation notices (Phase 3) |
@@ -35,10 +35,10 @@ Suggested card chips once it ships: `one unit, one ballot (14 reject codes)` · 
 | # | Lesson | Not in any sibling because | Proven by |
 |---|---|---|---|
 | 1 | Eligibility as of a record date from ownership intervals, versioned shares and a ledger balance | Siblings have one owner per row and no as-of roster | GQ-01..GQ-05; A-301 = 60, B-610 = 151, A-407, B-307 vs A-508 |
-| 2 | Closed reject vocabulary with a stated precedence, every rejected ballot still receipted and published | Gavel refuses bids but does not publish refusals | §4 table; 24 rejects over 14 codes in the fixture; GQ-08 |
+| 2 | Closed reject vocabulary with a stated precedence, every rejected ballot still receipted and published | Gavel refuses bids but does not publish refusals | §4 table; 26 rejects over 15 codes in the fixture; GQ-08 |
 | 3 | Proxies without chains; late-proxy-early-ballot | No sibling has delegated action by one person for another's position | P-1..P-8; GQ-09, GQ-10; B-035, B-050, B-039 |
 | 4 | One unit, one ballot with co-owners, same-instant casts, and the owner's direct cast superseding a proxy ballot | Nothing in the portfolio has shared ownership of a vote | E-8/E-9; A-205, B-305, B-110, A-402 (superseded), B-409, A-308; GT-21, GQ-11 |
-| 5 | Quorum on represented units in two modes, direct-only shown | — | Q-1..Q-4; 85/120 MET, 49/120 direct NOT MET; GQ-06, GQ-07 |
+| 5 | Quorum on represented units in two modes, direct-only shown | — | Q-1..Q-4; 87/120 MET, 51/120 direct NOT MET; GQ-06, GQ-07 |
 | 6 | Resolution thresholds as six integer inequalities, abstentions per basis, all six always printed | Adjuster evaluates rules on one record; nothing votes | T-1..T-6; R2, R3, R4 traps; GT-10..GT-13, GT-18 |
 | 7 | Plurality top-N in two modes with the boundary tie left open | Bracketry breaks standings ties by rule; here the machine refuses | T-7..T-11; E2 TIE_UNRESOLVED; E1 differs; GT-06..GT-09 |
 | 8 | Receipt + Merkle commitment + recount from an anonymized list | Housefile's hash proves a state; this proves inclusion and totals to a third party | C-1..C-7; GT-01..GT-05, GT-17, GT-20; `tally:verify`, `tally:recount` |
