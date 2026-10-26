@@ -15,6 +15,7 @@
     "db:validate": "prisma validate",
     "pretest:e2e": "npm run preflight",
     "test": "dotenv -e .env.test -e .env.local -- vitest run",
+    "test:engine": "vitest run tests/tally",
     "test:e2e": "dotenv -e .env.test -e .env.local -- playwright test",
     "dev:test": "dotenv -e .env.test -e .env.local -- next dev -p 7200",
     "build:test": "dotenv -e .env.test -e .env.local -- next build",
@@ -29,7 +30,12 @@
     "new-project": "tsx scripts/new-project.ts",
     "foundation:drift": "tsx scripts/foundation-drift.ts",
     "foundation:status": "tsx scripts/foundation-status.ts",
-    "foundation:check-modules": "tsx scripts/foundation-check-modules.ts"
+    "foundation:check-modules": "tsx scripts/foundation-check-modules.ts",
+    "tally:eval": "tsx scripts/tally-eval.ts",
+    "tally:verify": "tsx scripts/tally-verify.ts",
+    "tally:recount": "tsx scripts/tally-recount.ts",
+    "tally:lint": "tsx scripts/tally-lint.ts",
+    "fixtures:check": "python3 -I tools/verify_fixtures.py && python3 -I tools/golden_answers.py && git diff --exit-code fixtures/ && test -z \"$(git status --porcelain fixtures/)\""
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

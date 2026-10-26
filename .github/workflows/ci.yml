@@ -4,13 +4,21 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+    # Docs-only pushes cost Actions minutes and test nothing (Gavel's CI, 2026-10-19).
+    paths-ignore: ['docs/**', '**.md']
   pull_request:
+    paths-ignore: ['docs/**', '**.md']
+
+# A newer push supersedes a running one; no point finishing the old run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ci:
     runs-on: ubuntu-latest
     env:
-      # Ephemeral runner-local Postgres, gone when the job ends.
+      # Ephemeral runner-local Postgres, gone when the job ends. Nothing here is a secret.
       PGHOST: localhost
       PGUSER: postgres
       PGPASSWORD: postgres
@@ -18,6 +26,9 @@ jobs:
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/quorum_test?connection_limit=10&pool_timeout=20
       AUTH_SECRET: ci-only-secret-not-for-real-use-0123456789abc
       APP_URL: http://localhost:7200
+      # D-8: the engine compares calendar strings and must give the same answer in any process zone. A UTC-only
+      # runner would hide exactly the bug the string axis exists to prevent, so the whole job runs in Chicago.
+      TZ: America/Chicago
     services:
       postgres:
         image: postgres:17
@@ -40,6 +51,12 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run foundation:drift
+      # Phase 1 gate (docs/phase-1-tasks.md 1.14): the frozen fixtures, the pure engine, the oracle agreement.
+      # fixtures:check runs AFTER tally:eval so a product-code write into fixtures/ fails the run (task 1.2).
+      - run: npm run tally:lint
+      - run: npm run tally:eval
+      - run: npm run fixtures:check
       - run: createdb quorum_test
       - run: npx prisma migrate deploy
       - run: npx vitest run
@@ -47,7 +64,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
 
-  # Spec §4 / §13.3: both modules deleted by the manifest, and the tree must still generate, typecheck, build and pass drift.
+  # Spec §4 / §13.3: the remaining module deleted by the manifest, and the tree must still generate, typecheck, build and pass drift.
   modules-removed:
     runs-on: ubuntu-latest
     steps:
