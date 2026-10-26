@@ -3,8 +3,8 @@
 // SQLSTATE and the server message sit at meta.driverAdapterError.cause.{code,message} — measured, not assumed
 // (Gavel D-36: test the error shape you actually get). The mapper reads that one place.
 //   P0001 + "… is append-only"        → AppendOnlyViolation (the trigger names the table)
+//   P0001 + "… sealed"                → MeetingSealed (D-20: the Meeting guard after close, a label on a sealed set)
 //   P0001 + "… is closed"             → MeetingClosed (D-34, the close guard and quorum_cast_ballot)
-//   P0001 + "… sealed"                → MeetingSealed (D-20, the Meeting guard after close)
 //   42501                             → PrivilegeDenied (the app role reaching a sealed or forbidden table)
 //   23514                             → CheckViolation (a D-8 string or an integer CHECK, naming the constraint)
 //   anything else                     → the original error, untouched
@@ -69,9 +69,18 @@ export function mapDbError(e: unknown): unknown {
   if (c.code === '23514') return new CheckViolation(c.code, c.message, e);
   if (c.code === 'P0001') {
     if (/append-only/.test(c.message)) return new AppendOnlyViolation(c.code, c.message, e);
-    if (/is closed/.test(c.message) || /closed meeting/.test(c.message)) return new MeetingClosed(c.code, c.message, e);
-    if (/sealed/.test(c.message)) return new MeetingSealed(c.code, c.message, e);
+    if (/closed and sealed|label is sealed/.test(c.message)) return new MeetingSealed(c.code, c.message, e);
+    if (/is closed/.test(c.message)) return new MeetingClosed(c.code, c.message, e);
     return new QuorumDbError('DB_REFUSAL', c.code, c.message, e);
   }
   return e;
+}
+
+/** D-36: a cast whose castAt is earlier than the latest one recorded for the meeting; refused before any write. */
+export class CastOutOfOrder extends Error {
+  readonly code = 'CAST_OUT_OF_ORDER' as const;
+  constructor(readonly castAt: string, readonly latest: string) {
+    super(`CAST_OUT_OF_ORDER: castAt ${castAt} is earlier than the latest recorded cast ${latest} (D-36)`);
+    this.name = 'CastOutOfOrder';
+  }
 }
