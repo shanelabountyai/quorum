@@ -15,7 +15,9 @@ A receipt **proves inclusion; it does not hide how you voted from anyone you sho
 - `src/tally/` — the pure tally engine (no database, clock, randomness, network or model client; `npm run tally:lint` enforces it). Written from `docs/domain-brief.md` §4–§8 and checked against the Python oracle in `tools/` on every ballot, total, result and commitment.
 - `tools/` — stdlib-only Python oracles (`tallylib.py`, `build_fixtures.py`, `reference_tally.py`, `golden_answers.py`, `verify_fixtures.py`). Test oracles, never product code.
 - `fixtures/` — frozen (seed 20261025): 113 ballots, 87 counted, 26 rejected over 15 codes; sha256 table in `docs/domain-brief.md` §12. Product code never reads `answer_key_ballots.csv` or `expected_*.csv`.
-- `docs/` — `decisions.md` (authoritative), `domain-brief.md`, `phase-1-tasks.md`, `phase-1-plan.md`, `portfolio-overlap.md`, `EVAL.md` (the numbers as measured by TypeScript).
+- `src/meetings/` — Phase 2: the write layer. The cast path (Phase 1 rules against the live roster, the nonce, one `SECURITY DEFINER` function that writes the ballot, its sealed link and its label), close and seal, the recount from `Ballot` rows alone, the published export, the eligibility snapshot. Every call runs as the `quorum_app` role (D-33).
+- `prisma/schema/quorum.prisma` + `prisma/migrations/20261026000000_quorum_init/` — eleven tables; calendar strings with CHECKs, no `date`/`timestamp` on the meeting axis; append-only triggers; the Meeting guard and the seal trigger that revokes `SELECT` on `BallotSecret` at close.
+- `docs/` — `decisions.md` (authoritative), `domain-brief.md`, `phase-1-tasks.md`, `phase-1-plan.md`, `phase-2-tasks.md`, `phase-3-tasks.md` (draft), `portfolio-overlap.md`, `EVAL.md` (the numbers as measured by TypeScript).
 
 The fixture numbers are the oracle's answers on the generator's own defects, by the same author (D-24): an upper bound on spec agreement, not a claim about any real meeting. The published list carries no unit, caster or timestamp, but a unit's share in basis points can partially identify rare share values (151 bps = 4 penthouse units); this is stated, not solved.
 
@@ -26,6 +28,8 @@ The fixture numbers are the oracle's answers on the generator's own defects, by 
 | `npm run tally:eval` | runs the engine over `fixtures/`, prints the brief §11 table, diffs the four `expected_*.csv`; exits non-zero on any difference |
 | `npm run tally:verify -- --receipt <hex>` | is this receipt a leaf of the Merkle root recomputed from `fixtures/published_ballots.csv`? |
 | `npm run tally:recount -- --published <csv> --meeting <json>` | recomputes the root, the UNITS totals and the commitments from the published list; says what it cannot recompute |
+| `npm run tally:eval:db` | Phase 2: empties the **test** database, loads the roster, casts the 113 ballots through the cast path, closes, recounts from `Ballot` rows, diffs the same four files and the published export byte for byte |
+| `npm run quorum:load -- --org <slug>` | loads the fixture roster and meeting into an org, write-once (a second run inserts 0 and matches every column) |
 | `npm run tally:lint` | forbidden-import, float and tiebreak greps over `src/tally/`; rules JSON schema check |
 | `npm run fixtures:check` | `verify_fixtures.py && golden_answers.py && git diff --exit-code fixtures/` |
 | `npm test` | vitest: engine goldens (no database) plus the template's unit, integration and invariant tests (local Postgres) |

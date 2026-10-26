@@ -40,6 +40,8 @@ TypeScript on a clone of saas-foundation v1.3.0: Next.js 16, Prisma 7, PostgreSQ
 - `npm run tally:verify -- --receipt <hex>` — is this receipt a leaf of the root recomputed from `fixtures/published_ballots.csv`?
 - `npm run tally:recount -- --published <csv> --meeting <json>` — recomputes totals and commitments from the published list alone
 - `npm run fixtures:check` — `python3 -I tools/verify_fixtures.py && python3 -I tools/golden_answers.py && git diff --exit-code fixtures/ && test -z "$(git status --porcelain fixtures/)"`
+- `npm run tally:eval:db` — Phase 2: the 113 ballots through the cast path, close, recount from `Ballot` rows; same diff plus the published export byte for byte; empties the test database first
+- `npm run quorum:load -- --org <slug>` — Phase 2: fixture roster and meeting into an org, write-once
 - `npm run tally:lint` — greps `src/tally/` for `Date.now`, `Math.random`, `new Date(`, `prisma`, `fetch`, `anthropic`, `@/core`; greps for float money and for tiebreak sorts in `seats.ts`; validates the rules JSON schema
 
 ## Definition of done (any task)
