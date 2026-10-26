@@ -91,6 +91,8 @@ model Org {
   meetings       Meeting[] // app
   ownerLinks     OwnerLink[] // app
   archive        OrgArchive? // app
+  duesRuns       DuesRun[] // app
+  violations     Violation[] // app
 }
 
 model Membership {

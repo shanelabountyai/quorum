@@ -57,6 +57,7 @@ model Unit {
   ledger     LedgerEntry[]
   proxies    Proxy[]
   secrets    BallotSecret[]
+  violations Violation[]
 
   @@unique([orgId, unitId])
 }
@@ -101,19 +102,93 @@ model Ownership {
   @@unique([unitId, ownerId, fromDate])
 }
 
-/// Append-only by trigger (D-19, D-21). E-4: CHARGE + FINE − PAYMENT over entries dated <= the record date.
+/// Append-only by trigger (D-19, D-21). E-4: CHARGE + FINE − (PAYMENT + CREDIT) over entries dated <= the day (D-41).
 model LedgerEntry {
-  id          String     @id @default(uuid()) @db.Uuid
-  unitId      String     @db.Uuid
-  unit        Unit       @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  entryId     String // "L-00001"
-  kind        LedgerKind
-  amountCents Int // CHECK >= 0
-  date        String     @db.Char(10)
-  memo        String     @default("")
+  id              String           @id @default(uuid()) @db.Uuid
+  unitId          String           @db.Uuid
+  unit            Unit             @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  entryId         String // "L-00001"; a dues-run charge is "D-YYYY-MM", so a month posts once per unit
+  kind            LedgerKind
+  amountCents     Int // CHECK >= 0
+  date            String           @db.Char(10)
+  memo            String           @default("")
+  /// D-21: a CREDIT may reverse an earlier entry of the same unit; only a CREDIT may (CHECK), and a CREDIT needs a reason
+  reversesEntryId String?          @db.Uuid
+  reverses        LedgerEntry?     @relation("Reversal", fields: [reversesEntryId], references: [id], onDelete: Restrict)
+  reversedBy      LedgerEntry[]    @relation("Reversal")
+  reason          String           @default("")
+  runId           String?          @db.Uuid
+  run             DuesRun?         @relation(fields: [runId], references: [id], onDelete: Restrict)
+  fineFor         ViolationEvent[]
 
   @@unique([unitId, entryId])
   @@index([unitId, date])
+}
+
+/// D-21: one monthly dues run per association per month. Each unit is charged budget × bps / total (integer
+/// division); the remainder is this row's roundingCents — the association's ROUNDING memo line — so
+/// postedCents + roundingCents = budgetCents exactly. Append-only.
+model DuesRun {
+  id            String        @id @default(uuid()) @db.Uuid
+  orgId         String        @db.Uuid
+  org           Org           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  month         String        @db.Char(7) // "YYYY-MM"
+  chargedOn     String        @db.Char(10) // the day the charges are dated (the 1st of the month)
+  budgetCents   Int
+  totalBps      Int
+  postedCents   Int
+  roundingCents Int
+  units         Int
+  postedById    String?       @db.Uuid
+  createdAt     DateTime      @default(now()) @db.Timestamptz(6)
+  entries       LedgerEntry[]
+
+  @@unique([orgId, month])
+}
+
+/// D-22: the states of a violation, in the order the machine reaches them. Mirrors src/violations/transitions.json.
+enum ViolationState {
+  NOTICE_SENT
+  HEARING_SCHEDULED
+  CONTINUED
+  FINE_ASSESSED
+  DISMISSED
+}
+
+/// D-22: a violation record. Its state is its latest ViolationEvent (one reader, like a ballot's label). Append-only.
+model Violation {
+  id          String           @id @default(uuid()) @db.Uuid
+  orgId       String           @db.Uuid
+  org         Org              @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  unitId      String           @db.Uuid
+  unit        Unit             @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  number      String // "V-2026-001"
+  title       String
+  openedOn    String           @db.Char(10)
+  createdById String?          @db.Uuid
+  createdAt   DateTime         @default(now()) @db.Timestamptz(6)
+  events      ViolationEvent[]
+
+  @@unique([orgId, number])
+}
+
+/// D-22: one row per transition, with its actor, reason and dates. FINE_ASSESSED carries the FINE it posted. Append-only.
+model ViolationEvent {
+  id            String         @id @default(uuid()) @db.Uuid
+  violationId   String         @db.Uuid
+  violation     Violation      @relation(fields: [violationId], references: [id], onDelete: Restrict)
+  seq           Int
+  state         ViolationState
+  day           String         @db.Char(10) // the day of the transition, on the association's calendar
+  hearingOn     String?        @db.Char(10) // HEARING_SCHEDULED only
+  fineCents     Int? // FINE_ASSESSED only
+  ledgerEntryId String?        @db.Uuid // FINE_ASSESSED only: the FINE posted in the same transaction
+  ledgerEntry   LedgerEntry?   @relation(fields: [ledgerEntryId], references: [id], onDelete: Restrict)
+  reason        String         @default("")
+  actorId       String?        @db.Uuid
+  createdAt     DateTime       @default(now()) @db.Timestamptz(6)
+
+  @@unique([violationId, seq])
 }
 
 /// The meeting: its definition (rules + contests, the engine's schema), its salt, and — after close — its result.
