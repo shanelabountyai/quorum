@@ -1,4 +1,4 @@
-// Owner decision 2026-10-26 (D-54, reverses D-45 on this point): a signed-in member of the association without board
+// Owner decision 2026-10-26 (D-56, reverses D-45 on this point): a signed-in member of the association without board
 // rights who opens the desk page gets not-found — the same answer as a meeting that does not exist — not the 500 that
 // the foundation's AuthzError renders. The role is checked before any data is read. Both outcomes are asserted, and
 // the page's own data reads are watched so "before any data access" is a fact, not a claim.
@@ -26,7 +26,7 @@ const textOf = (node: unknown): string => {
   return '';
 };
 
-describe('D-54 the desk page: board sees it, everyone else is not-found', () => {
+describe('D-56 the desk page: board sees it, everyone else is not-found', () => {
   beforeAll(async () => {
     await emptyDatabase();
     orgId = (await makeOrg(SLUG)).id;

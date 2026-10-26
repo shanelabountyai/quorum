@@ -24,7 +24,7 @@ export async function readRoster(tx: Tx, orgId: string): Promise<Roster> {
 
 /**
  * A meeting's proxies in engine shape, keyed as the fixture keys them, plus the row id for the sealed link. The ONE
- * reader of a proxy's revocation: `revoked_at` is the import's Proxy.revokedAt or, failing that, the D-55
+ * reader of a proxy's revocation: `revoked_at` is the import's Proxy.revokedAt or, failing that, the D-57
  * ProxyRevocation row — the database refuses a row for a proxy the import already revoked, so at most one is set.
  */
 export async function readProxies(tx: Tx, meetingRowId: string): Promise<(Proxy & { row_id: string })[]> {

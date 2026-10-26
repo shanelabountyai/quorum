@@ -20,7 +20,7 @@ export const isUnique = (e: unknown) => (e as { code?: string })?.code === 'P200
 
 export type DuesRunResult = { runId: string; month: string; chargedOn: CalendarDay; allocation: DuesAllocation };
 
-/** What a run posts: the monthly dues, or (D-56) one special assessment. */
+/** What a run posts: the monthly dues, or (D-58) one special assessment. */
 export type RunSpec = { month: string; chargedOn: CalendarDay; budgetCents: number; entryId: string; memo: string; resolution?: string; assessmentId?: string; action: string };
 
 /**

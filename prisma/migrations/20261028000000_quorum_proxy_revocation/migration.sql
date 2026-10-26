@@ -1,4 +1,4 @@
--- Owner decision of 2026-10-26, D-55: an owner revokes a proxy they granted (or the board at the desk revokes it for
+-- Owner decision of 2026-10-26, D-57: an owner revokes a proxy they granted (or the board at the desk revokes it for
 -- them) before the meeting closes. The revocation is a NEW append-only row; the Proxy row is never updated. The
 -- generated half mirrors prisma/schema/quorum.prisma (CI's `prisma migrate diff`); the hand-written half adds the
 -- instant CHECK, the append-only trigger, the guard (same meeting, meeting open, not already revoked by the import),
@@ -36,13 +36,13 @@ ALTER TABLE "ProxyRevocation" ADD CONSTRAINT "ProxyRevocation_meetingId_fkey" FO
 
 -- D-8: the revocation instant is on the meeting axis, the engine's regex.
 ALTER TABLE "ProxyRevocation" ADD CONSTRAINT "ProxyRevocation_revokedAt_instant" CHECK ("revokedAt" ~ '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$');
--- D-55: a desk revocation says why (the grantor is not the one at the keyboard).
+-- D-57: a desk revocation says why (the grantor is not the one at the keyboard).
 ALTER TABLE "ProxyRevocation" ADD CONSTRAINT "ProxyRevocation_desk_has_reason" CHECK ("channel" <> 'DESK' OR btrim("reason") <> '');
 
 -- D-19: append-only.
 CREATE TRIGGER "ProxyRevocation_append_only" BEFORE UPDATE OR DELETE ON "ProxyRevocation" FOR EACH ROW EXECUTE FUNCTION quorum_append_only();
 
--- D-55: a revocation names a proxy of its own meeting, the meeting is still open (D-34's door, same words so the
+-- D-57: a revocation names a proxy of its own meeting, the meeting is still open (D-34's door, same words so the
 -- mapper reads it as MeetingClosed), and the proxy was not already revoked by the import (Proxy.revokedAt). The
 -- unique index on proxyId is the "once" for revocations written here.
 CREATE FUNCTION quorum_proxy_revocation_guard() RETURNS trigger LANGUAGE plpgsql AS $$
@@ -52,13 +52,13 @@ DECLARE
 BEGIN
   SELECT p."meetingId", p."revokedAt" INTO v_meeting, v_revoked FROM "Proxy" p WHERE p.id = NEW."proxyId";
   IF v_meeting IS DISTINCT FROM NEW."meetingId" THEN
-    RAISE EXCEPTION 'proxy % belongs to meeting %, not % (D-55)', NEW."proxyId", v_meeting, NEW."meetingId";
+    RAISE EXCEPTION 'proxy % belongs to meeting %, not % (D-57)', NEW."proxyId", v_meeting, NEW."meetingId";
   END IF;
   IF EXISTS (SELECT 1 FROM "Meeting" m WHERE m.id = NEW."meetingId" AND m."closedAt" IS NOT NULL) THEN
-    RAISE EXCEPTION 'meeting % is closed; no proxy can be revoked (D-55)', NEW."meetingId";
+    RAISE EXCEPTION 'meeting % is closed; no proxy can be revoked (D-57)', NEW."meetingId";
   END IF;
   IF v_revoked IS NOT NULL THEN
-    RAISE EXCEPTION 'proxy % was already revoked at % (D-55)', NEW."proxyId", v_revoked;
+    RAISE EXCEPTION 'proxy % was already revoked at % (D-57)', NEW."proxyId", v_revoked;
   END IF;
   RETURN NEW;
 END;

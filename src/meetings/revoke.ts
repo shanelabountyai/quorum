@@ -1,4 +1,4 @@
-// D-55 (owner decision, 2026-10-26; the D-35 i seam): revoking a proxy after it was recorded. A revocation is a new
+// D-57 (owner decision, 2026-10-26; the D-35 i seam): revoking a proxy after it was recorded. A revocation is a new
 // append-only ProxyRevocation row — never an UPDATE of the Proxy — written under the meeting lock at the meeting's
 // wall clock, so it sorts with the casts (D-36): a cast after it reads `revoked_at <= cast_at` and the engine's P-5,
 // unchanged, labels the ballot PROXY_REVOKED; a ballot already cast with the proxy keeps the label it was given then.
@@ -61,7 +61,7 @@ export const revokeProxyAtDesk = (who: Who & { role: Role }, input: Input & { re
 
 export type GrantedProxy = { id: string; proxyId: string; grantorUnit: string; holderOwner: string; holderName: string; receivedAt: string; revokedAt: string | null };
 
-/** The proxies this user's roster owner granted in this meeting, with any revocation (import or D-55 row). */
+/** The proxies this user's roster owner granted in this meeting, with any revocation (import or D-57 row). */
 export async function proxiesGrantedBy(tx: Tx, orgId: string, userId: string, meetingRowId: string): Promise<GrantedProxy[]> {
   const me = await linkedOwner(tx, orgId, userId);
   if (!me) return [];

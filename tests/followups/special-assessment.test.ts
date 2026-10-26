@@ -1,4 +1,4 @@
-// Owner decision 2026-10-26 (D-56, builds the D-47 seam): a PASSED resolution that was declared a special assessment
+// Owner decision 2026-10-26 (D-58, builds the D-47 seam): a PASSED resolution that was declared a special assessment
 // (with its amount, before the first ballot) posts once, as one dues run: each unit is charged
 // floor(amount × bps / 10000) with the shares as of the charge day (E-3), the remainder on the run's ROUNDING line
 // (D-21/D-47), and every charge carries the resolution id. Refused: not passed, not an assessment, already posted,
@@ -24,7 +24,7 @@ import { loadRosterFixtures } from '../../scripts/tally-fixtures';
 const fixtureMeeting = JSON.parse(readFileSync('fixtures/meeting.json', 'utf8'));
 const DEC_1 = '2026-12-01' as CalendarDay;
 
-describe('D-56 on the fixture: R2 (the roof assessment) FAILED, so it cannot be posted', () => {
+describe('D-58 on the fixture: R2 (the roof assessment) FAILED, so it cannot be posted', () => {
   let orgId = '';
   let meetingRowId = '';
   let board = '';
@@ -70,7 +70,7 @@ describe('D-56 on the fixture: R2 (the roof assessment) FAILED, so it cannot be 
   });
 });
 
-describe('D-56 posting a PASSED assessment, on a meeting built in the test', () => {
+describe('D-58 posting a PASSED assessment, on a meeting built in the test', () => {
   let orgId = '';
   let meetingRowId = '';
   let board = '';

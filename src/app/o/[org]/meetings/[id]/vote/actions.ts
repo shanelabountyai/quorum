@@ -17,7 +17,7 @@ export const castByProxyAction = orgAction(null, ballot.extend({ proxyId: ref('p
   receipt: await refusing(() => castByProxy(ctx, { meetingRowId: meetingId, proxyRowId: proxyId, fields })),
 }));
 
-// D-55: the grantor revokes a proxy they granted. Any role may call; the body requires the OwnerLink to the grantor
+// D-57: the grantor revokes a proxy they granted. Any role may call; the body requires the OwnerLink to the grantor
 // (anyone else is notFound). The revocation is a new row; the ballot rules judge the next cast with it (P-5).
 export const revokeOwnProxyAction = orgAction(null, z.object({ meetingId: ref('meeting'), proxyId: ref('proxy') }), async (ctx, { meetingId, proxyId }) => {
   const r = await refusing(() => revokeOwnProxy(ctx, { meetingRowId: meetingId, proxyRowId: proxyId }));

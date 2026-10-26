@@ -1,4 +1,4 @@
-// Owner decision 2026-10-26 (D-55, builds the D-35 i / D-49 seam): an owner revokes a proxy they granted, before the
+// Owner decision 2026-10-26 (D-57, builds the D-35 i / D-49 seam): an owner revokes a proxy they granted, before the
 // meeting closes, through the write layer. Revocation is a NEW append-only row (ProxyRevocation), never an UPDATE of
 // the Proxy; the one reader (readProxies) folds it into the engine's `revoked_at`, so the engine's P-5 rule — not
 // changed, and the frozen fixtures not touched — decides PROXY_REVOKED on the next cast through the database path.
@@ -37,7 +37,7 @@ async function proxy(unit: string, grantor: string, holder: string, meeting = me
   return db.proxy.findFirstOrThrow({ where: { meetingId: meeting, grantorUnit: { unitId: unit } }, orderBy: { proxyId: 'desc' } });
 }
 
-describe('D-55 proxy revocation', () => {
+describe('D-57 proxy revocation', () => {
   beforeAll(async () => {
     await emptyDatabase();
     orgId = await ensureOrg('revocation');

@@ -13,7 +13,7 @@ import { deskCastAction, deskProxyCastAction, deskRevokeProxyAction } from './ac
 export const metadata = { title: 'Desk' };
 
 // Task 3.2, the desk (D-39 b): board and manager cast for an owner chosen from the roster, or for a proxy holder.
-// D-54 (owner decision, reverses D-45 here): anyone else is notFound — the same answer as a meeting that does not
+// D-56 (owner decision, reverses D-45 here): anyone else is notFound — the same answer as a meeting that does not
 // exist — decided from the membership row alone, before any meeting, roster or proxy row is read.
 export default async function Desk({ params }: { params: Promise<{ org: string; id: string }> }) {
   const ctx = await requireOrg((await params).org);
@@ -62,7 +62,7 @@ export default async function Desk({ params }: { params: Promise<{ org: string; 
           {revocable.length > 0 && (
             <section aria-labelledby="revoke-h">
               <h2 id="revoke-h">Revoke a proxy for its grantor</h2>
-              <p>For a grantor who revokes in person or on paper. The revocation is recorded at the meeting&apos;s clock with your account and the reason; a ballot cast with the proxy afterwards is rejected PROXY_REVOKED, and one already cast keeps its label (D-55).</p>
+              <p>For a grantor who revokes in person or on paper. The revocation is recorded at the meeting&apos;s clock with your account and the reason; a ballot cast with the proxy afterwards is rejected PROXY_REVOKED, and one already cast keeps its label (D-57).</p>
               <ActionForm action={deskRevokeProxyAction.bind(null, ctx.slug)}>
                 <input type="hidden" name="meetingId" value={v.head.id} />
                 <label>Proxy to revoke <select name="proxyId" required>{revocable.map((p) => <option key={p.id} value={p.id}>{p.proxyId}: {p.grantorUnit.unitId} granted by {p.grantorOwner.ownerId}, held by {p.holderOwner.ownerId}</option>)}</select></label>

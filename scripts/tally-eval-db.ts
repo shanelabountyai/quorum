@@ -41,7 +41,7 @@ export type Replay = { meetingRowId: string; casts: CastResult[] };
  */
 export async function replayFixture(orgId: string, dir = FIXTURES_DIR, beforeCasts?: (meetingRowId: string) => Promise<void>): Promise<Replay> {
   const { meetingRowId } = await loadAll(orgId, dir, REPLAY_SALT);
-  if (beforeCasts) await beforeCasts(meetingRowId); // e.g. a test declaring a special assessment before voting starts (D-56)
+  if (beforeCasts) await beforeCasts(meetingRowId); // e.g. a test declaring a special assessment before voting starts (D-58)
   const f = loadFixtures(dir);
   const casts: CastResult[] = [];
   for (const b of [...f.ballots].sort(castOrder)) {

@@ -1,4 +1,4 @@
-// D-56 (owner decision, 2026-10-26; the D-47 seam): special assessments. The board DECLARES a resolution of a meeting
+// D-58 (owner decision, 2026-10-26; the D-47 seam): special assessments. The board DECLARES a resolution of a meeting
 // a special assessment of a stated amount while the meeting is open and before its first ballot — the owners then
 // vote on that amount, not on one written in afterwards. After close, a declared resolution whose stored result is
 // PASSED POSTS once, as one dues run (postRunInTx, the same writer as the monthly dues): each unit is charged

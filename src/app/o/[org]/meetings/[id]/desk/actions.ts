@@ -17,7 +17,7 @@ export const deskProxyCastAction = orgAction('org.update', ballot.extend({ proxy
   receipt: await refusing(() => castAtDeskByProxy(ctx, { meetingRowId: meetingId, proxyRowId: proxyId, fields })),
 }));
 
-// D-55: the board revokes a proxy at the desk for its grantor; the operator, the channel and the reason are recorded.
+// D-57: the board revokes a proxy at the desk for its grantor; the operator, the channel and the reason are recorded.
 export const deskRevokeProxyAction = orgAction('org.update', z.object({ meetingId: ref('meeting'), proxyId: ref('proxy'), reason: z.string().max(500) }), async (ctx, { meetingId, proxyId, reason }) => {
   const r = await refusing(() => revokeProxyAtDesk(ctx, { meetingRowId: meetingId, proxyRowId: proxyId, reason }));
   return { notice: `Proxy ${r.proxyId} revoked at ${r.revokedAt}, recorded as a desk revocation with your account and the reason.` };

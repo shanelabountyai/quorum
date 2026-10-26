@@ -39,7 +39,7 @@ export const queueNoticeAction = orgAction('org.update', z.object({ meetingId: r
   return { notice: r.queued ? `${r.queued} notices queued (not sent: notices stay in the outbox).` : `Already queued: ${r.already} notices. Nothing new was queued.` };
 });
 
-// D-56: declare a resolution a special assessment (open meeting, before the first ballot), and post a PASSED one once.
+// D-58: declare a resolution a special assessment (open meeting, before the first ballot), and post a PASSED one once.
 // contestId is a contest id inside the meeting's definition ("R2"), not a row id, hence notRef.
 export const declareAssessmentAction = orgAction('org.update', z.object({ meetingId: ref('meeting'), contestId: notRef(z.string().max(40)), amount: z.string().max(20) }), async (ctx, { meetingId, contestId, amount }) => {
   const r = await refusing(() => declareAssessment(ctx, { meetingRowId: meetingId, contestId, amount }));

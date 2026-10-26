@@ -79,7 +79,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ org: s
 
       <section aria-labelledby="assess-h">
         <h2 id="assess-h">Special assessments</h2>
-        <p>A resolution declared a special assessment before the first ballot posts once, after close, if it PASSED: each unit is charged its share of the amount (bps as of the charge day, rounded down to the cent) and the remainder goes on the run&apos;s ROUNDING line (D-21, D-56).</p>
+        <p>A resolution declared a special assessment before the first ballot posts once, after close, if it PASSED: each unit is charged its share of the amount (bps as of the charge day, rounded down to the cent) and the remainder goes on the run&apos;s ROUNDING line (D-21, D-58).</p>
         {v.assessments.length ? (
           <ul>
             {v.assessments.map((a) => (

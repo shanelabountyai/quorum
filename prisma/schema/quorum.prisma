@@ -125,7 +125,7 @@ model LedgerEntry {
   @@index([unitId, date])
 }
 
-/// D-21: one monthly dues run per association per month (and, D-56, one run per posted special assessment). Each unit is charged budget × bps / total (integer
+/// D-21: one monthly dues run per association per month (and, D-58, one run per posted special assessment). Each unit is charged budget × bps / total (integer
 /// division); the remainder is this row's roundingCents — the association's ROUNDING memo line — so
 /// postedCents + roundingCents = budgetCents exactly. Append-only.
 model DuesRun {
@@ -141,9 +141,9 @@ model DuesRun {
   units         Int
   postedById    String?            @db.Uuid
   createdAt     DateTime           @default(now()) @db.Timestamptz(6)
-  /// D-56: "" for the monthly dues run; "<meeting id>/<contest id>" (e.g. "AM-2026/R2") for a special-assessment run
+  /// D-58: "" for the monthly dues run; "<meeting id>/<contest id>" (e.g. "AM-2026/R2") for a special-assessment run
   resolution    String             @default("")
-  /// D-56: the declaration this run posted; unique, so an assessment posts once
+  /// D-58: the declaration this run posted; unique, so an assessment posts once
   assessmentId  String?            @unique @db.Uuid
   assessment    SpecialAssessment? @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
   entries       LedgerEntry[]
@@ -151,7 +151,7 @@ model DuesRun {
   @@unique([orgId, month, resolution])
 }
 
-/// D-56 (owner decision, 2026-10-26): a resolution declared a special assessment of `amountCents`, by the board,
+/// D-58 (owner decision, 2026-10-26): a resolution declared a special assessment of `amountCents`, by the board,
 /// while the meeting is open and before its first ballot (the owners vote on the amount as declared). Posted at most
 /// once, as a DuesRun, after the meeting closes with the resolution PASSED. Append-only.
 model SpecialAssessment {
@@ -241,7 +241,7 @@ model Meeting {
   @@unique([orgId, meetingId])
 }
 
-/// Append-only (D-19). A later revocation is a ProxyRevocation row (D-55).
+/// Append-only (D-19). A later revocation is a ProxyRevocation row (D-57).
 model Proxy {
   id             String           @id @default(uuid()) @db.Uuid
   meetingId      String           @db.Uuid
@@ -254,7 +254,7 @@ model Proxy {
   holderOwnerId  String           @db.Uuid
   holderOwner    Owner            @relation("ProxyHolder", fields: [holderOwnerId], references: [id], onDelete: Restrict)
   receivedAt     String           @db.Char(19)
-  /// set only by a proxies.csv import (the paper record says when it was revoked); a later revocation is a ProxyRevocation row (D-55)
+  /// set only by a proxies.csv import (the paper record says when it was revoked); a later revocation is a ProxyRevocation row (D-57)
   revokedAt      String?          @db.Char(19)
   secrets        BallotSecret[]
   revocation     ProxyRevocation?
@@ -262,13 +262,13 @@ model Proxy {
   @@unique([meetingId, proxyId])
 }
 
-/// D-55: who revoked a proxy through the application — the grantor themselves, or the board at the desk for them.
+/// D-57: who revoked a proxy through the application — the grantor themselves, or the board at the desk for them.
 enum RevocationChannel {
   GRANTOR
   DESK
 }
 
-/// D-55 (owner decision, 2026-10-26; the D-35 i seam): a proxy revoked after it was recorded. A new row, never an UPDATE
+/// D-57 (owner decision, 2026-10-26; the D-35 i seam): a proxy revoked after it was recorded. A new row, never an UPDATE
 /// of the Proxy; one per proxy; refused for a closed meeting, an archived org, a proxy of another meeting or one the
 /// import already marked revoked (triggers). readProxies folds revokedAt into the engine's revoked_at (P-5). Append-only.
 model ProxyRevocation {
