@@ -72,7 +72,7 @@ Quorum treats the meeting as a tally with a rule for every one of those question
 - [ ] Elections in both modes, the other mode informational with `differs`; boundary ties → `TIE_UNRESOLVED` with open-seat count and tied ids; no machine tiebreak anywhere in `src/`
 
 **P0-5: Receipts and verifiable publication** *(core learning artifact #4)*
-- [ ] Receipt and Merkle root exactly C-1..C-3 (GT-01..GT-05); contest and meeting commitments C-4, C-5; published list C-6 sorted by receipt with no unit, caster or timestamp
+- [ ] Receipt and Merkle root exactly C-1..C-3 (GT-01..GT-05); contest and meeting commitments C-4, C-5; published list C-6 sorted by receipt with no unit, caster or timestamp, and with each ballot's `bps_as_of` (D-37)
 - [ ] `npm run tally:verify -- --receipt <hex>` says whether a receipt is in the published root; `npm run tally:recount -- --published <csv>` recomputes totals and commitments from the published list alone and compares to the published values
 - [ ] Every screen and the README that show a receipt carry the one-sentence limit: "proves inclusion; does not hide how you voted from anyone you show it to"
 
@@ -123,7 +123,7 @@ Phase 2 and 3 task lists are written at the gates.
 ## Risks
 
 - **Spec optimism.** The oracle agrees with itself. Mitigation: D-24 wording; the "not generated" list; O-items for every bylaws-dependent choice; a hand-written meeting in P1.
-- **Sealed link leaks through side channels** (cast timestamps, ballot id order, bps on the ballot row identifying a unique penthouse). Mitigation: ballot ids are random; the published list has no timestamps; the brief names bps as a partial identifier for rare share values (151 bps = 4 units) and the README says so. Not solved, stated.
+- **Sealed link leaks through side channels** (cast timestamps, ballot id order, bps on the published row identifying a rare share value). Mitigation: ballot ids are random (D-40: `B-` + 12 hex, minted with `crypto`; only the order of casts within one second is visible to someone who sorts by id); the published list has no timestamps. **The published list carries `bps_as_of` per ballot (D-37, owner decision 2026-10-26)** so the WEIGHTED totals are recountable from it — at the cost that a rare share value partially identifies a unit: in the fixture 151 bps is one of four penthouses, and 60 and 67 bps are one unit each after the 2026-07-01 amendment. The brief, the README and the published-list screen say so. Not solved, stated. The desk path (D-39) records the operator in the sealed link, not the audit log; an audit timestamp next to `Ballot.castAt` can still be joined by someone holding both.
 - **Cloud sandbox cannot run Prisma or Playwright.** Mitigation: D-6; CI decides; the session records which commands it could not run.
 - **Threshold vocabulary is wrong for a real association.** Mitigation: it is data; adding a basis is a decision plus a golden case, not a code fork.
 - **Scope creep into dues and violations.** Mitigation: Phase 3, task list written at the gate, D-21/D-22 fix the shape now.

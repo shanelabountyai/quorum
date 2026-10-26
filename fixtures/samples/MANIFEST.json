@@ -87,9 +87,9 @@
   "generator": "tools/build_fixtures.py",
   "seed": 20261025,
   "sha256": {
-    "answer_key_ballots.csv": "b871803a0921cc1ef8e1d38a543c35191ad73464661cbf1274a0fe4c6e224fdc",
+    "answer_key_ballots.csv": "f71da7e445d0aee72e6de1e19709152f419dc4b0c45241803b206b6823dc7ca9",
     "assessments.csv": "cb822b4c6f461505c8460eb589b9648ceff8c400c2a9b1ac6e898950b29b09cc",
-    "ballots.csv": "2945204dc33de90ab412203d3c3d48114a6bad340265182c39eb5775cb049da6",
+    "ballots.csv": "f0a121ac94b1281db338348f47f0fcec9cd0f885934da8aa1da889bf7caaa5bd",
     "meeting.json": "91b221c7332124c8ba3004ee0b4bdfb92ae6c396e60334159a919dd8beafd8e0",
     "owners.csv": "f7e08a6a5efbcf0b13a077329bfb565d9702df98a1a40058ff5d3dbf8c2bf1eb",
     "ownerships.csv": "65ddcaacdcf5b396fdd2517b21beb7d7f3f891ff5a9e7bd27115930fc11669dd",

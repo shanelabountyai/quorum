@@ -113,7 +113,8 @@ def share_bps(shares: list[dict], unit_id: str, as_of: str) -> int:
 
 
 def balance_cents(ledger: list[dict], unit_id: str, as_of: str) -> int:
-    """E-4: Σ CHARGE + FINE − Σ PAYMENT over entries dated <= as_of (inclusive). Integer cents."""
+    """E-4: Σ CHARGE + FINE − Σ (PAYMENT + CREDIT) over entries dated <= as_of (inclusive). Integer cents.
+    A CREDIT reduces the balance exactly like a PAYMENT (D-41)."""
     bal = 0
     for e in ledger:
         if e["unit_id"] != unit_id or e["date"] > as_of:
@@ -121,7 +122,7 @@ def balance_cents(ledger: list[dict], unit_id: str, as_of: str) -> int:
         amt = int(e["amount_cents"])
         if e["kind"] in ("CHARGE", "FINE"):
             bal += amt
-        elif e["kind"] == "PAYMENT":
+        elif e["kind"] in ("PAYMENT", "CREDIT"):
             bal -= amt
         else:
             raise ValueError(f"unknown ledger kind {e['kind']}")

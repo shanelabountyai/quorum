@@ -43,38 +43,38 @@ Meeting `AM-2026`: window `2026-11-01T09:00:00` to `2026-11-14T19:00:00`, quorum
 | R3 Amend bylaws §9.2: minimum lease term 30 days | resolution | MAJORITY_OF_ALL_UNITS |
 | R4 Adopt the two-pet limit policy | resolution | MAJORITY_OF_UNITS_REPRESENTED |
 
-**Ballots:** 113 received, 87 counted (51 direct, 36 by proxy), 26 rejected. Injected defects (one each unless noted), with the ballot ids in the frozen fixture:
+**Ballots:** 113 received, 87 counted (51 direct, 36 by proxy), 26 rejected. Injected defects (one each unless noted), with the ballot ids in the frozen fixture (random public ids, `B-` + 12 hex chars minted from the seed — D-40):
 
 | Defect | Rule | Ballot(s) | Expected |
 |---|---|---|---|
-| D-DUP-COOWNER co-owner casts after co-owner | E-8 | B-024 (A-205; B-083 counted) | DUPLICATE_UNIT |
-| D-DUP-SAME-INSTANT co-owners at the same second | E-8 | B-064 (B-305; B-036 counted, lower id) | DUPLICATE_UNIT |
-| D-DUP-RESUBMIT same owner, 90 s later, different choices | E-8 | B-033 (B-110) | DUPLICATE_UNIT |
-| D-DUP-PROXY-AFTER-PROXY two holders cast for one unit | E-8 | B-065 (B-409; B-090 counted) | DUPLICATE_UNIT |
-| D-DUP-PROXY-AFTER-OWNER holder casts after the owner's direct cast | E-8 | B-020 (A-308; B-022 counted) | DUPLICATE_UNIT |
-| D-PROXY-SUPERSEDED holder casts 11:00, co-owner casts directly 18:00 | E-9 (D-26) | B-088 (A-402) re-labelled; B-029 counted | PROXY_SUPERSEDED_BY_OWNER |
-| D-LATE-AT-CLOSE cast at 19:00:00 exactly | B-3 | B-073 (A-109) | LATE |
-| D-LATE 19:20 | B-3 | B-039 (B-207) | LATE |
-| D-LATE-PROXY-BALLOT valid proxy, ballot 19:01 | B-3 | B-017 (A-310) | LATE |
-| D-EARLY 2026-10-31, then a valid cast on the 14th | B-2 | B-096 (B-410; B-034 counted) | EARLY |
-| D-UNKNOWN-UNIT unit A-711 | B-1 | B-061 | UNKNOWN_UNIT |
-| D-NOT-OWNER old owner of A-407 casts directly | E-6 | B-051 (B-077 by the new owner counted) | NOT_OWNER |
-| D-PROXY-GRANTOR-NOT-OWNER old owner of A-407 granted a proxy | P-3 | B-035 | PROXY_GRANTOR_NOT_OWNER |
-| D-DELINQUENT ×4 | E-7 | B-059 (A-204), B-063 (A-508, paid 11-15), B-076 + B-097 (A-110 co-owners) | INELIGIBLE_DELINQUENT |
-| D-DELINQUENT-VIA-PROXY | E-7 | B-054 (B-108) | INELIGIBLE_DELINQUENT |
-| D-PROXY-UNKNOWN `P-999` | P-1 | B-044 (A-101) | PROXY_UNKNOWN |
-| D-PROXY-UNIT-MISMATCH A-102's proxy used for A-103 | P-2 | B-057 | PROXY_UNIT_MISMATCH |
-| D-PROXY-LATE-AFTER-CLOSE proxy received 19:05, ballot 18:30 | P-4 | B-092 (A-104) | PROXY_LATE |
-| D-PROXY-AFTER-BALLOT proxy received 11-13, ballot cast 11-12 | P-4 | B-010 (A-105) | PROXY_LATE |
-| D-PROXY-REVOKED revoked 11-10, ballot 11-12 | P-5 | B-027 (A-106) | PROXY_REVOKED |
-| D-PROXY-CHAIN A-107→O-060 (owner of B-101, absent); B-101→O-078; O-078 casts both | P-6 | B-104 (A-107); B-107 (B-101) counted | PROXY_CHAIN |
-| D-PROXY-HOLDER-MISMATCH cast by a non-holder, no chain | P-7 | B-049 (B-102) | PROXY_HOLDER_MISMATCH |
-| D-PROXY-HOLDER-NOT-MEMBER holder is the old owner of A-407 | P-8 | B-023 (B-103) | PROXY_HOLDER_NOT_MEMBER |
-| D-OVERVOTE-E1 four candidates for three seats | S-5 | B-067 (B-506) counted; E1 void | OVERVOTE |
-| D-OVERVOTE-E2 + INVALID-R2 "MAYBE" | S-5, S-2 | B-012 (A-507) counted; E2 and R2 void | OVERVOTE, INVALID_CHOICE |
-| D-UNKNOWN-CANDIDATE C-09 + DUP-CANDIDATE + unknown contest R9 | S-3, S-4 | B-062 (B-402) counted; E1, E2 void | UNKNOWN_CANDIDATE, DUPLICATE_CANDIDATE |
-| D-INVALID-CHOICE-E1 a string instead of a list | S-2 | B-082 (A-305, by proxy) counted; E1 void | INVALID_CHOICE |
-| (blank ballot) `{}` | S-1 | B-038 (A-208) counted; abstains on R1–R4 | BLANK ×6 |
+| D-DUP-COOWNER co-owner casts after co-owner | E-8 | B-4c592e1a3f97 (A-205; B-93db7f40089c counted) | DUPLICATE_UNIT |
+| D-DUP-SAME-INSTANT co-owners at the same second | E-8 | B-e7af3f0221d2 (B-305; B-c1f44372d04e counted, lower id) | DUPLICATE_UNIT |
+| D-DUP-RESUBMIT same owner, 90 s later, different choices | E-8 | B-2d583687e5a4 (B-110) | DUPLICATE_UNIT |
+| D-DUP-PROXY-AFTER-PROXY two holders cast for one unit | E-8 | B-3b8c9e701e96 (B-409; B-861e31a09702 counted) | DUPLICATE_UNIT |
+| D-DUP-PROXY-AFTER-OWNER holder casts after the owner's direct cast | E-8 | B-5dc008bdf96b (A-308; B-a1162427a3d5 counted) | DUPLICATE_UNIT |
+| D-PROXY-SUPERSEDED holder casts 11:00, co-owner casts directly 18:00 | E-9 (D-26) | B-99da35485afc (A-402) re-labelled; B-9de508f918e5 counted | PROXY_SUPERSEDED_BY_OWNER |
+| D-LATE-AT-CLOSE cast at 19:00:00 exactly | B-3 | B-d4c80a6d785a (A-109) | LATE |
+| D-LATE 19:20 | B-3 | B-5ccd2ff71bb5 (B-207) | LATE |
+| D-LATE-PROXY-BALLOT valid proxy, ballot 19:01 | B-3 | B-aace0241f403 (A-310) | LATE |
+| D-EARLY 2026-10-31, then a valid cast on the 14th | B-2 | B-1a8118f431c5 (B-410; B-9c0b8caf266f counted) | EARLY |
+| D-UNKNOWN-UNIT unit A-711 | B-1 | B-332c8f8b9d17 | UNKNOWN_UNIT |
+| D-NOT-OWNER old owner of A-407 casts directly | E-6 | B-53b00259a041 (B-4115838a6614 by the new owner counted) | NOT_OWNER |
+| D-PROXY-GRANTOR-NOT-OWNER old owner of A-407 granted a proxy | P-3 | B-c8fefb5b04d6 | PROXY_GRANTOR_NOT_OWNER |
+| D-DELINQUENT ×4 | E-7 | B-61348bfc47a2 (A-204), B-3ef49f595b22 (A-508, paid 11-15), B-d8bd69bbee30 + B-59cccd2243c3 (A-110 co-owners) | INELIGIBLE_DELINQUENT |
+| D-DELINQUENT-VIA-PROXY | E-7 | B-939f3d135209 (B-108) | INELIGIBLE_DELINQUENT |
+| D-PROXY-UNKNOWN `P-999` | P-1 | B-2832a2464507 (A-101) | PROXY_UNKNOWN |
+| D-PROXY-UNIT-MISMATCH A-102's proxy used for A-103 | P-2 | B-141b4896c38d | PROXY_UNIT_MISMATCH |
+| D-PROXY-LATE-AFTER-CLOSE proxy received 19:05, ballot 18:30 | P-4 | B-2fbcc5a686fc (A-104) | PROXY_LATE |
+| D-PROXY-AFTER-BALLOT proxy received 11-13, ballot cast 11-12 | P-4 | B-4ef4b4b650d2 (A-105) | PROXY_LATE |
+| D-PROXY-REVOKED revoked 11-10, ballot 11-12 | P-5 | B-4da7ea5fdc96 (A-106) | PROXY_REVOKED |
+| D-PROXY-CHAIN A-107→O-060 (owner of B-101, absent); B-101→O-078; O-078 casts both | P-6 | B-8ff77e82e874 (A-107); B-6e1a4d2c77c6 (B-101) counted | PROXY_CHAIN |
+| D-PROXY-HOLDER-MISMATCH cast by a non-holder, no chain | P-7 | B-8e16e50e2466 (B-102) | PROXY_HOLDER_MISMATCH |
+| D-PROXY-HOLDER-NOT-MEMBER holder is the old owner of A-407 | P-8 | B-2b63ada638ce (B-103) | PROXY_HOLDER_NOT_MEMBER |
+| D-OVERVOTE-E1 four candidates for three seats | S-5 | B-cbe93957d944 (B-506) counted; E1 void | OVERVOTE |
+| D-OVERVOTE-E2 + INVALID-R2 "MAYBE" | S-5, S-2 | B-24a5d8fa1964 (A-507) counted; E2 and R2 void | OVERVOTE, INVALID_CHOICE |
+| D-UNKNOWN-CANDIDATE C-09 + DUP-CANDIDATE + unknown contest R9 | S-3, S-4 | B-da48c5729a09 (B-402) counted; E1, E2 void | UNKNOWN_CANDIDATE, DUPLICATE_CANDIDATE |
+| D-INVALID-CHOICE-E1 a string instead of a list | S-2 | B-3d013fa28ecf (A-305, by proxy) counted; E1 void | INVALID_CHOICE |
+| (blank ballot) `{}` | S-1 | B-935cdca9f55c (A-208) counted; abstains on R1–R4 | BLANK ×6 |
 | (4% of selections blank at random) | S-1 | — | BLANK |
 
 **Traps (the naive answer is wrong):**
@@ -131,7 +131,7 @@ A malformed `cast_at` is `INPUT_INVALID` (raised, not a reject code); the databa
 | E-1 | Owners of a unit as of date D: ownership rows with `from_date <= D` and (`to_date` empty or `to_date > D`). `[from, to)`. |
 | E-2 | Member as of D: owner of at least one unit under E-1. |
 | E-3 | Share as of D: the row with the greatest `effective_from <= D`; later rows ignored; no row → `RULES_INVALID`. |
-| E-4 | Balance as of D: Σ `CHARGE` + `FINE` − Σ `PAYMENT` over entries with `date <= D` (inclusive). Integer cents. |
+| E-4 | Balance as of D: Σ `CHARGE` + `FINE` − Σ (`PAYMENT` + `CREDIT`) over entries with `date <= D` (inclusive). Integer cents. A `CREDIT` reduces the balance exactly like a payment (D-41, GQ-12). |
 | E-5 | Delinquent as of D: balance > 0. |
 
 ## 6. Selection-level rules
@@ -176,7 +176,7 @@ A tie is a fail under every majority basis. The eval prints pass/fail under all 
 | C-3 | Merkle root over **every received ballot**: leaves `SHA-256(receipt)` sorted ascending; parent `SHA-256(left_hex + right_hex)`; an odd node is carried up unchanged; root of nothing is `SHA-256("")`. |
 | C-4 | Contest commitment: `SHA-256(root + "\|" + contest_id + "\|" + canonical totals JSON)`; totals are `{"UNITS":{…},"WEIGHTED":{…}}` for elections and `{"bps":{…},"units":{…}}` for resolutions. |
 | C-5 | Meeting commitment: `SHA-256` of the contest commitments joined by `"\|"` in contest-id order. |
-| C-6 | Published list: `(receipt, ballot_id, status, code, canonical choices)` sorted by receipt; no unit, no caster, no timestamp. Anyone recomputes C-3..C-5 and the totals from it. |
+| C-6 | Published list: `(receipt, ballot_id, status, code, bps_as_of, canonical choices)` sorted by receipt; no unit, no caster, no timestamp. `bps_as_of` is the unit's share as of the record date (0 for an unknown unit), published for every received ballot so the WEIGHTED totals are recountable (D-37); a rare share value partially identifies a unit (151 bps is one of four penthouses) — stated, not solved. Anyone recomputes C-3..C-5 and the totals from it. |
 | C-7 | Verification: a voter checks their receipt appears in the list (and, holding the nonce, can recompute it from their ballot id and choices). |
 
 What this proves and does not prove (D-2): a receipt in the root proves the ballot was included as cast; a recount from the list proves the published totals; nothing here hides how a voter voted from someone the voter shows the receipt and nonce to. **Not coercion-resistant, not receipt-free.**
@@ -211,7 +211,7 @@ Each worked by hand from §4–§8, then confirmed by `tools/golden_answers.py`.
 | GT-20 | same root, totals changed; identical inputs | commitment differs; `meeting_commitment({"R":"r","E":"e"}) = SHA-256("e\|r")` |
 | GT-21 | P1 U1 o1→o2. p1 o2 via P1 10:00 YES+[X]; d1 o1 direct 12:00 NO+[Y]; p2 o2 via P1 13:00; d2 o1 direct 14:00 | p1 PROXY_SUPERSEDED_BY_OWNER; d1 COUNTED; p2, d2 DUPLICATE_UNIT; 1 unit represented; R units YES 0 NO 1; E WEIGHTED Y 1000 only; reversed order gives the same meeting commitment; 3 rejected |
 
-## 10. Golden cases — quorum and eligibility (GQ-01..GQ-11)
+## 10. Golden cases — quorum and eligibility (GQ-01..GQ-12)
 
 | ID | Case | Expected |
 |---|---|---|
@@ -226,6 +226,7 @@ Each worked by hand from §4–§8, then confirmed by `tools/golden_answers.py`.
 | GQ-09 | P1 U1 o1→o2, P2 U2 o2→o3; U1 via P1 cast by o2 / o3 / o4; U2 via P1 | `""`; PROXY_CHAIN; PROXY_HOLDER_MISMATCH; PROXY_UNIT_MISMATCH |
 | GQ-10 | proxy received 19:05 (ballot 18:30); received 11-13 (ballot 11-12); revoked 11-10 (ballot 11-12); holder o4old; grantor o4old for U4; o4old casts U4 directly | PROXY_LATE; PROXY_LATE; PROXY_REVOKED; PROXY_HOLDER_NOT_MEMBER; PROXY_GRANTOR_NOT_OWNER; NOT_OWNER |
 | GQ-11 | unit already counted **by proxy**: o1 direct / o2 via P1; unit already counted **directly**: o2 via P1 / o1 direct | `""` (E-9 applies); DUPLICATE_UNIT; DUPLICATE_UNIT; DUPLICATE_UNIT |
+| GQ-12 | CHARGE 19600 on 11-01, CREDIT 4600 on 11-10, PAYMENT 15000 on 11-12: balance as of 11-09 / 11-10 / 11-14, delinquent on 11-14; then CHARGE 19600 and a CREDIT 19600 dated 11-15 | 19600; 15000; 0; not delinquent; 19600; delinquent (D-41: a CREDIT reduces like a PAYMENT, dated the same way) |
 
 ## 11. Reference measurements (kickoff, seed 20261025)
 
@@ -237,14 +238,14 @@ Each worked by hand from §4–§8, then confirmed by `tools/golden_answers.py`.
 | Rejected by code | DUPLICATE_UNIT 5, EARLY 1, INELIGIBLE_DELINQUENT 5, LATE 3, NOT_OWNER 1, PROXY_CHAIN 1, PROXY_GRANTOR_NOT_OWNER 1, PROXY_HOLDER_MISMATCH 1, PROXY_HOLDER_NOT_MEMBER 1, PROXY_LATE 2, PROXY_REVOKED 1, PROXY_SUPERSEDED_BY_OWNER 1, PROXY_UNIT_MISMATCH 1, PROXY_UNKNOWN 1, UNKNOWN_UNIT 1 |
 | Unknown contest keys on counted ballots | 1 |
 | Quorum (UNITS, 5000 bps) | units 87/120 MET; weighted 7232/10000 MET; direct only 51/120 NOT MET; proxy units 36; **binding MET** |
-| Merkle root | `cbf6767e889c534353cdf2b7ad7b91845c98645b5207d36ab79cd54dc1665d49` |
-| E1 (3 seats, WEIGHTED) | counted 87 / voted 81 / blank 3 / void INVALID_CHOICE 1, OVERVOTE 1, UNKNOWN_CANDIDATE 1 · WEIGHTED C-02 4613, C-04 4118, C-05 3584, C-01 3579, C-03 3525 · UNITS C-02 57, C-04 53, C-01 45, C-03 40, C-05 39 · **ELECTED C-02, C-04, C-05**; UNITS would elect C-01, C-02, C-04 (differs) · commitment `404952858cb10ebf7156b3f50cc50f74949d1355c11dcec6fe64d35efe3570fc` |
-| E2 (2 seats, UNITS) | 87 / 82 / 3 / DUPLICATE_CANDIDATE 1, OVERVOTE 1 · UNITS C-12 47, C-13 40, C-14 40, C-11 32 · WEIGHTED C-12 3677, C-14 3396, C-13 3345, C-11 2852 · **TIE_UNRESOLVED: C-12 elected, 1 seat open, tied C-13, C-14**; WEIGHTED would elect C-12, C-14 · `d1211dfea505510c125f4fbd911912ed897eaeab7e2b5179e631a1a925286077` |
-| R1 (T-1) | 87 / 83 / 4 · YES 56, NO 20, ABSTAIN 11; bps 4726 / 1605 / 901 · **PASSED** · by basis: T-1 PASS, T-2 PASS, T-3 FAIL, T-4 PASS, T-5 PASS, T-6 FAIL · `f8d246b2fb08aa0fa29387194111298c4a23f114a5b74c24159d043ce3b74f32` |
-| R2 (T-6) | 87 / 80 / 6 / INVALID_CHOICE 1 · YES 53, NO 18, ABSTAIN 15; bps 4414 / 1523 / 1239 · **FAILED** · T-1 PASS, T-2 PASS, T-3 FAIL, T-4 PASS, T-5 PASS, T-6 FAIL · `92ef0d6d2e473a6cf148144038c3e024346305b98dea8e245436f2258cf4b80d` |
-| R3 (T-3) | 87 / 82 / 5 · YES 40, NO 39, ABSTAIN 8; bps 3409 / 3205 / 618 · **FAILED** · T-1 PASS, T-2 FAIL, T-3 FAIL, T-4 FAIL, T-5 PASS, T-6 FAIL · `d8ad22f25ea94118c854a0b938e83fb7fdbe20e230885e4aac2dd1079197a43a` |
-| R4 (T-2) | 87 / 81 / 6 · YES 33, NO 32, ABSTAIN 22; bps 2652 / 2697 / 1883 · **FAILED** · T-1 PASS, T-2 FAIL, T-3 FAIL, T-4 FAIL, T-5 FAIL, T-6 FAIL · `603919525c475a9a8c1fa68c369552bfce99acdb36bc5ce0a496c8860f38d994` |
-| Meeting commitment | `a703d58b3c148c601c9eed219095cb0e4d3894c1d1b86f774d8ac077d6c5037a` |
+| Merkle root | `5214cb0fbe352a425743c6fd6774e3d4a13c63876a4f75157d8de8ea2ac35f5d` |
+| E1 (3 seats, WEIGHTED) | counted 87 / voted 81 / blank 3 / void INVALID_CHOICE 1, OVERVOTE 1, UNKNOWN_CANDIDATE 1 · WEIGHTED C-02 4613, C-04 4118, C-05 3584, C-01 3579, C-03 3525 · UNITS C-02 57, C-04 53, C-01 45, C-03 40, C-05 39 · **ELECTED C-02, C-04, C-05**; UNITS would elect C-01, C-02, C-04 (differs) · commitment `6e7e5214796f4d1108f00644fe77830c2c1fe201d73e63cda8ff71534874365f` |
+| E2 (2 seats, UNITS) | 87 / 82 / 3 / DUPLICATE_CANDIDATE 1, OVERVOTE 1 · UNITS C-12 47, C-13 40, C-14 40, C-11 32 · WEIGHTED C-12 3677, C-14 3396, C-13 3345, C-11 2852 · **TIE_UNRESOLVED: C-12 elected, 1 seat open, tied C-13, C-14**; WEIGHTED would elect C-12, C-14 · `1c29cc84361c75db07cdaea2f0fffa5f50a26dcd08e8e4014510c07284c61490` |
+| R1 (T-1) | 87 / 83 / 4 · YES 56, NO 20, ABSTAIN 11; bps 4726 / 1605 / 901 · **PASSED** · by basis: T-1 PASS, T-2 PASS, T-3 FAIL, T-4 PASS, T-5 PASS, T-6 FAIL · `7907317db8c1dea3e193a4630336d32600a4ef214d172c088ccd913a2a759b95` |
+| R2 (T-6) | 87 / 80 / 6 / INVALID_CHOICE 1 · YES 53, NO 18, ABSTAIN 15; bps 4414 / 1523 / 1239 · **FAILED** · T-1 PASS, T-2 PASS, T-3 FAIL, T-4 PASS, T-5 PASS, T-6 FAIL · `720b70c1311f2b8c74860bac11a08bcdb52bc67fbc0f35d76bca2e8a07a1797c` |
+| R3 (T-3) | 87 / 82 / 5 · YES 40, NO 39, ABSTAIN 8; bps 3409 / 3205 / 618 · **FAILED** · T-1 PASS, T-2 FAIL, T-3 FAIL, T-4 FAIL, T-5 PASS, T-6 FAIL · `3d392e202ebf03305ed08ef430e75c4e0e44acccc7406e83971d3aad111f1d14` |
+| R4 (T-2) | 87 / 81 / 6 · YES 33, NO 32, ABSTAIN 22; bps 2652 / 2697 / 1883 · **FAILED** · T-1 PASS, T-2 FAIL, T-3 FAIL, T-4 FAIL, T-5 FAIL, T-6 FAIL · `636d441314e0a0c5cbee240b5786fe3e99c4b2cdd77eeecc17b89e9998e22ed4` |
+| Meeting commitment | `3e6f583ccb0a793735a01944e1a9deaf3289f431e0060e2dfaa11c79bb9337e9` |
 | Order independence | 5 shuffles of `ballots.csv`: same totals, same meeting commitment |
 | Answer key vs oracle | 113 of 113 ballots: generator's intended status and code equal the oracle's (asserted inside `build_fixtures.py`) |
 
@@ -259,7 +260,7 @@ python3 -I tools/golden_answers.py                                       # GT-01
 python3 -I tools/verify_fixtures.py                                      # regenerates to a temp dir, compares every sha256, re-runs goldens; ends OK
 ```
 
-Generated twice in separate directories at kickoff with identical hashes (all 15 files).
+Generated twice in separate directories at kickoff with identical hashes (all 15 files). **Regenerated 2026-10-26 for D-37 (`bps_as_of` on the published list) and D-40 (random public ballot ids)**, again twice in separate directories with identical hashes; unchanged by that regeneration: units, unit_shares, owners, ownerships, assessments, meeting.json, proxies and expected_totals (every total, quorum figure and result is the same; the ids, receipts, root and commitments moved).
 
 | File | Rows | sha256 |
 |---|---|---|
@@ -270,15 +271,15 @@ Generated twice in separate directories at kickoff with identical hashes (all 15
 | assessments.csv | 2627 | `cb822b4c6f461505c8460eb589b9648ceff8c400c2a9b1ac6e898950b29b09cc` |
 | meeting.json | — | `91b221c7332124c8ba3004ee0b4bdfb92ae6c396e60334159a919dd8beafd8e0` |
 | proxies.csv | 49 | `482a66326d025909da0619a28e786ed41f66af54935e7d678b85a87265525fdd` |
-| ballots.csv | 113 | `2945204dc33de90ab412203d3c3d48114a6bad340265182c39eb5775cb049da6` |
-| answer_key_ballots.csv | 113 | `b871803a0921cc1ef8e1d38a543c35191ad73464661cbf1274a0fe4c6e224fdc` |
-| expected_ballots.csv (reference tally) | 113 | `05568e9575e583ec83ecd62741f933ccb83bf366241fd268df5508408817eb43` |
+| ballots.csv | 113 | `f0a121ac94b1281db338348f47f0fcec9cd0f885934da8aa1da889bf7caaa5bd` |
+| answer_key_ballots.csv | 113 | `f71da7e445d0aee72e6de1e19709152f419dc4b0c45241803b206b6823dc7ca9` |
+| expected_ballots.csv (reference tally) | 113 | `e619500c452d13edc4914d5ba3122b6243c5282e7f5eb4586f3d5604f7acc841` |
 | expected_totals.csv | 42 | `f93d086e361091725bcea62c98311e4c39460821051712154b999577b2eab00c` |
-| expected_results.csv | 7 | `6ad148de69a56267ee872e55b262923c6cd6e056034a10eb6f96fd4f04ea700f` |
-| expected_quorum.csv | 13 | `fd272eaac9fc9bc4d148e4a4f10b5ae022ec4cb6b6beaa981d1bfcc3715a71d6` |
-| published_ballots.csv | 113 | `b1a3c751a8540bd78dbbb26e00cf51702c23875ddd726c212e56e0218ba9fa7f` |
-| MANIFEST.json | — | `509e23166a6c343976ae2f8844c78dc1a76265b182ccff0832bf172ee20534d6` |
+| expected_results.csv | 7 | `76bfb70a5708190cb383cb0b4cafc783b7ddf04f2bc8249f71f1e34e95f01ed2` |
+| expected_quorum.csv | 13 | `a75f5e06e335719dc2139d771111fb3b0ab9559e7cb3caa1e3677da1cceabb0b` |
+| published_ballots.csv | 113 | `8439d208f57611ef55a19154ddf1b39a3b475779f6c8f9fefa116b29033fcb8a` |
+| MANIFEST.json | — | `59e5d43da9cd3f88133153b6a7b80504298fae6a27041f2260b253a2b0095f26` |
 
 `MANIFEST.json` holds the first nine hashes plus counts and defects applied; `verify_fixtures.py` also regenerates the five expected files and compares them. `answer_key_ballots.csv` is the oracle: product code never reads it; only `tally:eval` does. `ballots.csv` carries unit ids and nonces because it is a test fixture; the product's `Ballot` table after close carries neither (D-20).
 
-Fixture columns: `ballots.csv` = `ballot_id, unit_id, cast_by, via_proxy_id, cast_at, nonce, choices (JSON)`; `proxies.csv` = `proxy_id, grantor_unit, grantor_owner, holder_owner, received_at, revoked_at`; `expected_ballots.csv` = `ballot_id, unit_id, status, code, bps, receipt, selection_codes`; `expected_results.csv` has one row per contest plus a `MEETING` row with received/counted/rejected and the meeting commitment.
+Fixture columns: `ballots.csv` = `ballot_id, unit_id, cast_by, via_proxy_id, cast_at, nonce, choices (JSON)`; `proxies.csv` = `proxy_id, grantor_unit, grantor_owner, holder_owner, received_at, revoked_at`; `expected_ballots.csv` = `ballot_id, unit_id, status, code, bps, receipt, selection_codes`; `expected_results.csv` has one row per contest plus a `MEETING` row with received/counted/rejected and the meeting commitment; `published_ballots.csv` = `receipt, ballot_id, status, code, bps_as_of, choices_canonical` (C-6, D-37).

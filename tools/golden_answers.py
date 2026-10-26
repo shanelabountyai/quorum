@@ -1,7 +1,7 @@
 """Quorum — kickoff answer key (test oracle, never product code).
 
 Re-derives every golden case in docs/domain-brief.md §9 (GT-01..GT-21, tally) and §10
-(GQ-01..GQ-11, quorum and eligibility) from tools/tallylib.py and checks each against the
+(GQ-01..GQ-12, quorum and eligibility) from tools/tallylib.py and checks each against the
 value worked by hand in the brief. Prints one line per case and ends with OK, or exits 1
 naming the first mismatch.
 
@@ -209,6 +209,16 @@ def main() -> int:
          reject(ballot("c", "U1", "o2", at, {}, via="P1"), [P1], counted={"U1": ""}),
          reject(ballot("d", "U1", "o1", at, {}), [P1], counted={"U1": ""})),
         ("", "DUPLICATE_UNIT", "DUPLICATE_UNIT", "DUPLICATE_UNIT"))
+
+    # GQ-12 (D-41): a CREDIT reduces the balance exactly like a PAYMENT, dated the same way (E-4 inclusive).
+    led4 = [{"unit_id": "U1", "kind": "CHARGE", "amount_cents": "19600", "date": "2026-11-01"},
+            {"unit_id": "U1", "kind": "CREDIT", "amount_cents": "4600", "date": "2026-11-10"},
+            {"unit_id": "U1", "kind": "PAYMENT", "amount_cents": "15000", "date": "2026-11-12"}]
+    led5 = [dict(led4[0]), {"unit_id": "U1", "kind": "CREDIT", "amount_cents": "19600", "date": "2026-11-15"}]
+    add("GQ-12", "a CREDIT reduces the balance like a payment; one dated after the record date does not count",
+        (T.balance_cents(led4, "U1", "2026-11-09"), T.balance_cents(led4, "U1", "2026-11-10"), T.balance_cents(led4, "U1", "2026-11-14"),
+         T.delinquent_units(led4, ["U1"], "2026-11-14"), T.balance_cents(led5, "U1", "2026-11-14"), T.delinquent_units(led5, ["U1"], "2026-11-14")),
+        (19600, 15000, 0, set(), 19600, {"U1"}))
 
     bad = 0
     for gid, desc, got, exp in cases:

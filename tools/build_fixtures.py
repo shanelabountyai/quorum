@@ -8,7 +8,8 @@ Writes, under fixtures/ (default) or --out DIR:
   assessments.csv     dues ledger in integer cents (CHARGE / PAYMENT / FINE), append-only
   meeting.json        the 2026 annual meeting: rules JSON, 2 elections, 4 resolutions
   proxies.csv         proxy grants, some defective on purpose
-  ballots.csv         ~110 ballots with injected defects; each carries its random nonce
+  ballots.csv         ~110 ballots with injected defects; each carries its random nonce and a random
+                      public id B-<12 hex> (D-40)
   answer_key_ballots.csv  the generator's intent per ballot: expected status, code, defect, trap
   MANIFEST.json       seed, counts, defects applied, sha256 of every file
 
@@ -405,10 +406,20 @@ class Gen:
 
     # ------------------------------------------------------------ ids, then traps
     def assign_ids(self) -> None:
+        # The shuffled sequence number is internal only: the trap nudges below walk ballots in this order (it was
+        # the public id before D-40), and it is never written to any fixture file.
         order = list(range(len(self.ballots)))
         self.rng.shuffle(order)
         for n, i in enumerate(order, start=1):
-            self.ballots[i]["ballot_id"] = f"B-{n:03d}"
+            self.ballots[i]["seq"] = n
+        # D-40: the public ballot id is random — "B-" + 12 hex chars (48 bits) minted from the seeded generator, so
+        # arrival order cannot be read from it and the fixtures stay reproducible. Minted in sequence order.
+        seen: set[str] = set()
+        for b in sorted(self.ballots, key=lambda b: b["seq"]):
+            bid = f"B-{self.rng.getrandbits(48):012x}"
+            assert bid not in seen, bid
+            seen.add(bid)
+            b["ballot_id"] = bid
         # the same-instant co-owner pair: lower ballot id wins (B-4)
         pair = sorted([b for b in self.ballots if b["unit_id"] == "B-305"], key=lambda b: b["ballot_id"])
         self.key[pair[1]["tmp"]].update({"expected_status": "REJECTED", "expected_code": "DUPLICATE_UNIT", "defect": "D-DUP-SAME-INSTANT"})
@@ -420,7 +431,7 @@ class Gen:
     def _voted(self, meeting: dict, cid: str) -> list[dict]:
         res = self._run(meeting)
         counted = {r.ballot_id for r in res["ballot_results"] if r.status == "COUNTED" and r.selections[cid]["status"] == "VOTED"}
-        return sorted((b for b in self.ballots if b["ballot_id"] in counted), key=lambda b: b["ballot_id"])
+        return sorted((b for b in self.ballots if b["ballot_id"] in counted), key=lambda b: b["seq"])
 
     def _swap_election(self, meeting: dict, cid: str, frm: str, to: str, small_only: bool = False, large_only: bool = False,
                        medium_up: bool = False) -> bool:

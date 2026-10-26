@@ -6,7 +6,8 @@ field: per meeting, ballots received / counted / rejected by code and quorum; pe
 counted / voted / blank / void by code, totals in both modes, result, commitment.
 
 --write-expected writes fixtures/expected_ballots.csv, expected_totals.csv, expected_results.csv,
-expected_quorum.csv and published_ballots.csv (the anonymized list anyone can recount from).
+expected_quorum.csv and published_ballots.csv (the anonymized list anyone can recount from, with each
+ballot's bps_as_of — D-37).
 --shuffle N re-runs the tally N times on a shuffled ballot order and fails if any commitment moves.
 
 Usage: python3 tools/reference_tally.py [--fixtures DIR] [--write-expected] [--shuffle N]
@@ -94,8 +95,9 @@ def write_expected(fixtures: str, res: dict, ballots: list[dict]) -> None:
         ";".join(f"{cid}:{s['status']}{(':' + s['code']) if s['code'] else ''}" for cid, s in sorted(r.selections.items()))] for r in rs])
     by_id = {b["ballot_id"]: b for b in ballots}
     pub = sorted(rs, key=lambda r: r.receipt)
-    w("published_ballots.csv", ["receipt", "ballot_id", "status", "code", "choices_canonical"],
-      [[r.receipt, r.ballot_id, r.status, r.code, T.canonical_choices(by_id[r.ballot_id]["choices"])] for r in pub])
+    # C-6 (D-37): bps_as_of is published per ballot so the WEIGHTED totals are recountable from the list alone
+    w("published_ballots.csv", ["receipt", "ballot_id", "status", "code", "bps_as_of", "choices_canonical"],
+      [[r.receipt, r.ballot_id, r.status, r.code, r.bps, T.canonical_choices(by_id[r.ballot_id]["choices"])] for r in pub])
     totals = []
     for c in res["contests"]:
         if c["kind"] == "ELECTION":
