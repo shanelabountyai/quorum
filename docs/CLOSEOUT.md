@@ -19,10 +19,19 @@ Coercion resistance and receipt-freeness (a voter who shows receipt and nonce pr
 
 ## By hand (Shane)
 
+Done on the Mac, 2026-10-26: port moved to 6200 and the port-table row added (D-54); `reuse-scan.py` re-run (D-55, closes D-27 a); stale pre-D-26 counts fixed in the PRD, `docs/portfolio-overlap.md` and D-15; `docs/DEMO.md` written, with every command run once against a fresh database.
+
 1. Review PR #1; decide whether to merge.
-2. `git push origin v1.3.0` from the Mac so the tag shim in `ci.yml` can go; delete the throwaway branch `ci-proof-1-14`.
-3. Add the port-table row (quorum → 7200) in `~/.claude/CLAUDE.md`; re-run `reuse-scan.py` (D-27 a).
+2. `git push origin v1.3.0` (fetch the tag from the `template` remote first; it is not in this clone) so the tag shim in `ci.yml` can go; delete the throwaway branch `ci-proof-1-14` on origin.
+3. Add the quorum row (6200) to `saas-foundation/CLONES.md`: the local checkout has none (D-54).
 4. When a database beyond the laptop exists: `npm run db:roles` and point the runtime `DATABASE_URL` at `quorum_web` (`docs/deploy-roles.md`); nothing is deployed.
-5. Fix the stale pre-D-26 numbers in `docs/portfolio-overlap.md` and D-15 (49 direct / 85 with proxies → 51 / 87).
-6. Build-log card #21. Optional: delete the one `migrate diff` PR comment from Phase 2.
-7. Reverse any of D-44..D-53 (session defaults) if they are not what you want.
+5. Build-log card #21. Optional: delete the one `migrate diff` PR comment from Phase 2.
+6. Reverse any of D-44..D-53 (session defaults) if they are not what you want.
+7. Upstream to saas-foundation: `requireOrg` throws, so a member on an owner-only page gets HTTP 500, not 403 (found in the demo walk; `src/core/**` is template-owned).
+
+## Still to do for closure (house definition of done)
+
+- [x] `docs/DEMO.md`
+- [ ] Exec brief, *Quorum in Brief* (`exec-brief` skill)
+- [ ] LinkedIn drafts in the Ledger (mine D-47's 76-cents-not-1, the D-40 id-space test, D-26)
+- [ ] Cost review: expected near zero (not deployed, no cron, no LLM), but record it with `keep / off` lines

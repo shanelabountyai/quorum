@@ -1,8 +1,19 @@
 # NEXT
 
-## ▶ Next session: Shane reviews PR #1 (Phase 3 gate reached); `docs/CLOSEOUT.md` is the by-hand list
+## ▶ Next session: closure deliverables — exec brief, LinkedIn drafts, cost review (`docs/CLOSEOUT.md` § Still to do)
 
-Branch `kickoff`, PR #1 (`kickoff` → `main`, https://github.com/shanelabountyai/quorum/pull/1), **never merged by the agent**. The PRD names no Phase 4; `docs/CLOSEOUT.md` is the closeout draft.
+Model: Sonnet (prose; no engine logic). PR #1 still open, never merged by the agent; Shane's by-hand list is `docs/CLOSEOUT.md` § By hand.
+
+**2026-10-26 (fourth session, on the Mac, Shane present) — closeout part 1.**
+- Port **6200**, not 7200 (D-54): `package.json`, `playwright.config.ts`, `ci.yml`, README, CLAUDE.md; row added to the port table in `~/.claude/CLAUDE.md` (next free now 6300).
+- Reuse scan re-run (D-55): no other project has ballots/Merkle/quorum; Adjuster's canonical JSON would have broken the oracle on non-ASCII (`JSON.stringify` vs `ensure_ascii`), so writing it fresh was right.
+- Stale pre-D-26 counts fixed (PRD "fifteen", overlap 26/15 and 87/120, 51/120, D-15).
+- `docs/DEMO.md`: three acts. Every command was run once on a fresh `quorum` database. The browser acts were driven headless against :6200 with a throwaway Playwright walk, since deleted: roster 120/124/138/141/2627, 49 proxies, desk + homeowner receipts, DUPLICATE_UNIT, close → recount equals, receipt IN THE ROOT, dues ROUNDING $0.76, V-2026-001 fine on B-203 ($468.50), 6 notices queued / 0 sent, delete refused. Act 1: `tally:eval` 0 diffs, `fixtures:check` OK, `tally:lint` OK, `tally:verify` in/not-in, `tally:recount` 45/0/1 and the tampered file exits 1 naming R1, `tally:eval:db` equals, `BallotSecret` permission denied, `Ballot` DELETE refused (D-19).
+- Found: a member opening an owner-only page gets HTTP 500 (template `requireOrg` throws; upstream). The violation form needs a reload between steps. npm 11 skips `postinstall` (`npx prisma generate` by hand). All three are in DEMO.md.
+- Not run this session: `npm test`, e2e, CI (code changes were the port only; CI runs on push).
+- Left uncommitted on purpose: `next dev` appended a "nextjs-agent-rules" block to CLAUDE.md. Commit or discard it as you prefer.
+
+---
 
 **2026-10-26 (third build session, unattended, cloud) — owner decisions applied, then Phase 3 tasks 3.1–3.9.**
 - Decisions recorded as owner decisions **D-37..D-43** (O-10, O-11 closed): D-37 `bps_as_of` on the published list; D-38 keep the table-wide REVOKE; D-39 `OwnerLink` written by a trigger on `Invite` acceptance (email match) + the desk path with the operator in `BallotSecret.enteredById`; D-40 random public ballot ids `B-<12 hex>` (fixtures mint from the seed, the write layer from `crypto`; the same-instant id guard is per unit); D-41 `CREDIT` in E-4 + GQ-12; D-42 `quorum_web` LOGIN role (`npm run db:roles`, `docs/deploy-roles.md`); D-43 archive, never delete (`OrgArchive`, `beforeOrgDelete` refuses, trigger second door).
