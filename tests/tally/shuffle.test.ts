@@ -53,7 +53,7 @@ describe('order independence (task 1.10)', () => {
     expect(moved).toBe(SHUFFLE_COUNT); // the premise: every shuffle actually changed the order
   });
   it('the fixed answer is the oracle\'s', () => {
-    expect(base.meeting_commitment).toBe('a703d58b3c148c601c9eed219095cb0e4d3894c1d1b86f774d8ac077d6c5037a');
-    expect(base.merkle_root).toBe('cbf6767e889c534353cdf2b7ad7b91845c98645b5207d36ab79cd54dc1665d49');
+    expect(base.meeting_commitment).toBe('3e6f583ccb0a793735a01944e1a9deaf3289f431e0060e2dfaa11c79bb9337e9');
+    expect(base.merkle_root).toBe('5214cb0fbe352a425743c6fd6774e3d4a13c63876a4f75157d8de8ea2ac35f5d');
   });
 });

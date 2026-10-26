@@ -109,16 +109,16 @@ describe('every fixture ballot agrees with the oracle (task 1.6)', () => {
   });
   it('the named traps land on the named ballots (brief §3)', () => {
     const code = (id: string) => byId.get(id)!.code;
-    expect(code('B-088')).toBe('PROXY_SUPERSEDED_BY_OWNER'); // A-402, D-26
-    expect(byId.get('B-029')!.status).toBe('COUNTED');
-    expect(code('B-065')).toBe('DUPLICATE_UNIT'); // proxy after proxy
-    expect(code('B-020')).toBe('DUPLICATE_UNIT'); // proxy after owner
-    expect(code('B-064')).toBe('DUPLICATE_UNIT'); // same instant, higher id
-    expect(code('B-073')).toBe('LATE'); // 19:00:00 exactly
-    expect(code('B-092')).toBe('PROXY_LATE'); // proxy received after the ballot
-    expect(code('B-104')).toBe('PROXY_CHAIN');
-    expect(code('B-063')).toBe('INELIGIBLE_DELINQUENT'); // A-508 paid 11-15
-    expect(byId.get('B-038')!.selections.R1!.status).toBe('BLANK'); // the blank ballot
-    expect(byId.get('B-062')!.unknown_contests).toEqual(['R9']);
+    expect(code('B-99da35485afc')).toBe('PROXY_SUPERSEDED_BY_OWNER'); // A-402, D-26
+    expect(byId.get('B-9de508f918e5')!.status).toBe('COUNTED');
+    expect(code('B-3b8c9e701e96')).toBe('DUPLICATE_UNIT'); // proxy after proxy
+    expect(code('B-5dc008bdf96b')).toBe('DUPLICATE_UNIT'); // proxy after owner
+    expect(code('B-e7af3f0221d2')).toBe('DUPLICATE_UNIT'); // same instant, higher id
+    expect(code('B-d4c80a6d785a')).toBe('LATE'); // 19:00:00 exactly
+    expect(code('B-2fbcc5a686fc')).toBe('PROXY_LATE'); // proxy received after the ballot
+    expect(code('B-8ff77e82e874')).toBe('PROXY_CHAIN');
+    expect(code('B-3ef49f595b22')).toBe('INELIGIBLE_DELINQUENT'); // A-508 paid 11-15
+    expect(byId.get('B-935cdca9f55c')!.selections.R1!.status).toBe('BLANK'); // the blank ballot
+    expect(byId.get('B-da48c5729a09')!.unknown_contests).toEqual(['R9']);
   });
 });

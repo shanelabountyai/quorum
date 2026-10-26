@@ -163,7 +163,7 @@ describe('the fixture agrees with the oracle (task 1.8)', () => {
       expect(r.result).toBe('FAILED');
       expect(r.passes_by_basis.MAJORITY_OF_VOTES_CAST).toBe(true);
     }
-    expect(res.meeting_commitment).toBe('a703d58b3c148c601c9eed219095cb0e4d3894c1d1b86f774d8ac077d6c5037a');
+    expect(res.meeting_commitment).toBe('3e6f583ccb0a793735a01944e1a9deaf3289f431e0060e2dfaa11c79bb9337e9');
     expect(res.unknown_contest_keys).toBe(1);
   });
 });

@@ -4,7 +4,7 @@
 // anything is written; the product path mints the nonce and the id.
 import { beforeAll, describe, expect, it } from 'vitest';
 import { db } from '@/core/db';
-import { castBallot, castBallotWithNonce, unitHashFor } from '@/meetings/cast';
+import { BALLOT_ID_RE, castBallot, castBallotWithNonce, mintBallotId, unitHashFor } from '@/meetings/cast';
 import { closeMeeting } from '@/meetings/close';
 import { asApp, asOwner } from '@/meetings/db';
 import { CastOutOfOrder, MeetingClosed } from '@/meetings/errors';
@@ -54,9 +54,9 @@ describe('2.4 castBallot', () => {
     for (const r of rows) expect(`${r.status}:${r.code}`, r.ballot_id).toBe(engine.get(r.ballot_id));
   });
 
-  it('E-9 on tables: B-088 (A-402 by proxy) has seq 1 COUNTED and seq 2 REJECTED/PROXY_SUPERSEDED_BY_OWNER caused by B-029, at B-029\'s castAt (D-31)', async () => {
-    const b088 = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-088' } });
-    const b029 = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-029' } });
+  it('E-9 on tables: B-99da35485afc (A-402 by proxy) has seq 1 COUNTED and seq 2 REJECTED/PROXY_SUPERSEDED_BY_OWNER caused by B-9de508f918e5 (the co-owner\'s direct cast), at its castAt (D-31)', async () => {
+    const b088 = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-99da35485afc' } });
+    const b029 = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-9de508f918e5' } });
     const events = await db.ballotStatusEvent.findMany({ where: { ballotId: b088.id }, orderBy: { seq: 'asc' } });
     expect(events.map((e) => [e.seq, e.status, e.code, e.at, e.causeBallotId])).toEqual([
       [1, 'COUNTED', null, b088.castAt, null],
@@ -64,7 +64,7 @@ describe('2.4 castBallot', () => {
     ]);
     expect(b088.viaProxy).toBe(true);
     expect(b088.unitHash).toBe(b029.unitHash); // same unit under the salt, which is how the cast path found it
-    const cast029 = replay.casts.find((c) => c.ballotId === 'B-029')!;
+    const cast029 = replay.casts.find((c) => c.ballotId === 'B-9de508f918e5')!;
     expect(cast029).toMatchObject({ status: 'COUNTED', code: '', supersededRowId: b088.id });
     // the label reader agrees
     const labels = await asApp((tx) => currentLabels(tx, replay.meetingRowId));
@@ -73,12 +73,12 @@ describe('2.4 castBallot', () => {
   });
 
   it('the sealed link holds the ids as cast, resolved where the roster has them (D-35 e)', async () => {
-    const b061 = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-061' } }); // UNKNOWN_UNIT A-711
+    const b061 = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-332c8f8b9d17' } }); // UNKNOWN_UNIT A-711
     const s = await db.ballotSecret.findUniqueOrThrow({ where: { ballotId: b061.id } });
     expect(s).toMatchObject({ unitRef: 'A-711', unitId: null, viaProxyRef: '', viaProxyId: null });
     expect(s.castByRef).toBe('O-999');
     expect(s.castById).toBeNull();
-    const b044 = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-044' } }); // PROXY_UNKNOWN P-999
+    const b044 = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-2832a2464507' } }); // PROXY_UNKNOWN P-999
     expect(await db.ballotSecret.findUniqueOrThrow({ where: { ballotId: b044.id } })).toMatchObject({ unitRef: 'A-101', viaProxyRef: 'P-999', viaProxyId: null });
     expect(b061.unitHash).toBe(unitHashFor(replay.meetingRowId, 'A-711', REPLAY_SALT));
     expect(b061.bpsAsOf).toBe(0);
@@ -98,15 +98,32 @@ describe('2.4 castBallot', () => {
     expect(await db.ballot.count()).toBe(before);
   });
 
-  it('the product path mints a 32-hex nonce and the next id, and the receipt is C-2 over them', async () => {
+  it('the product path mints a 32-hex nonce and a random B-<12 hex> id (D-40), and the receipt is C-2 over them', async () => {
     const r = await castBallot({ meetingRowId: replay.meetingRowId, unitId: 'A-101', castBy: 'O-001', viaProxyId: '', castAt: ts('2026-11-14T19:20:00'), choices: { R1: 'YES' } });
-    expect(r.ballotId).toBe('B-114');
+    expect(r.ballotId).toMatch(BALLOT_ID_RE);
     expect(r.nonce).toMatch(/^[0-9a-f]{32}$/);
-    expect(r.receipt).toBe(receiptFor('B-114', r.nonce, { R1: 'YES' }));
+    expect(r.receipt).toBe(receiptFor(r.ballotId, r.nonce, { R1: 'YES' }));
     expect(r).toMatchObject({ status: 'REJECTED', code: 'LATE' }); // 19:20 is after close_at; received, labelled, in the root
-    const row = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-114' } });
+    const row = await db.ballot.findFirstOrThrow({ where: { ballotId: r.ballotId } });
     expect(row.nonceHash).not.toBe(r.nonce);
     expect(row.nonceHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('at an instant that already holds a ballot, a minted id sorts after it and a supplied id that does not is CAST_OUT_OF_ORDER (D-40 amends D-36)', async () => {
+    const at = ts('2026-11-14T19:21:00');
+    const first = await castBallot({ meetingRowId: replay.meetingRowId, ballotId: 'B-800000000000', unitId: 'A-102', castBy: 'O-002', viaProxyId: '', castAt: at, choices: {} });
+    for (let i = 0; i < 5; i++) {
+      const next = await castBallot({ meetingRowId: replay.meetingRowId, unitId: 'A-102', castBy: 'O-002', viaProxyId: '', castAt: at, choices: {} });
+      expect(next.ballotId > first.ballotId, `${next.ballotId} after ${first.ballotId}`).toBe(true);
+    }
+    const before = await db.ballot.count();
+    await expect(castBallot({ meetingRowId: replay.meetingRowId, ballotId: 'B-100000000000', unitId: 'A-102', castBy: 'O-002', viaProxyId: '', castAt: at, choices: {} })).rejects.toBeInstanceOf(CastOutOfOrder);
+    expect(await db.ballot.count()).toBe(before);
+    // and the stored labels still equal the engine over the stored set: B-4 order is (castAt, ballotId)
+    const rows = await asApp((tx) => storedBallots(tx, replay.meetingRowId));
+    const late = rows.filter((r) => r.cast_at === at);
+    expect(late).toHaveLength(6);
+    expect(late.every((r) => r.code === 'LATE')).toBe(true);
   });
 
   it('after closeMeeting a cast is MeetingClosed — from the lock, and from the trigger if the lock is bypassed', async () => {
@@ -124,5 +141,19 @@ describe('2.4 castBallot', () => {
 
   it('castBallotWithNonce refuses a nonce that is not 128 bits', async () => {
     await expect(castBallotWithNonce({ meetingRowId: replay.meetingRowId, unitId: 'A-101', castBy: 'O-001', viaProxyId: '', castAt: ts('2026-11-14T19:40:00'), choices: {} }, 'abc')).rejects.toThrow(/128 bits/);
+  });
+});
+
+describe('D-40 mintBallotId', () => {
+  it('draws B-<12 hex> and re-draws until the id sorts after the one it must exceed', () => {
+    const draws = ['000000000001', '7fffffffffff', 'a00000000000'];
+    let i = 0;
+    expect(mintBallotId('B-800000000000', () => draws[i++]!)).toBe('B-a00000000000');
+    expect(i).toBe(3);
+    expect(mintBallotId(null)).toMatch(BALLOT_ID_RE);
+  });
+  it('refuses after 64 draws that never sort after the bound, and refuses a malformed draw', () => {
+    expect(() => mintBallotId('B-ffffffffffff', () => '000000000000')).toThrow(/64 draws/);
+    expect(() => mintBallotId(null, () => 'XYZ')).toThrow(/B-<12 hex>/);
   });
 });

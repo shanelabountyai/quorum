@@ -6,7 +6,7 @@
 import { randomBytes } from 'node:crypto';
 import { shareBps } from '@/tally/asof';
 import { ballotRejectCode, buildRoster, type CountedUnits } from '@/tally/ballots';
-import { canonicalJson, sha256Hex, type Json } from '@/tally/canonical';
+import { canonicalJson, compareStrings, sha256Hex, type Json } from '@/tally/canonical';
 import type { BallotRejectCode, BallotStatus } from '@/tally/codes';
 import { canonicalChoices, receiptFor } from '@/tally/commit';
 import { timestamp, type Timestamp } from '@/tally/time';
@@ -18,7 +18,7 @@ import { readMeeting, readProxies, readRoster } from './roster';
 
 export type CastInput = {
   meetingRowId: string;
-  /** the public ballot id; minted as B-NNN under the meeting lock when absent */
+  /** the public ballot id; minted at random (D-40) under the meeting lock when absent — only the fixture replay supplies one */
   ballotId?: string;
   /** ids as cast: a unit that is not on the roster is still received (UNKNOWN_UNIT) and sealed by name */
   unitId: string;
@@ -40,6 +40,23 @@ export type CastResult = {
   supersededRowId: string | null;
 };
 
+/** D-40: a public ballot id is "B-" + 12 lowercase hex chars (48 bits from crypto). */
+export const BALLOT_ID_RE = /^B-[0-9a-f]{12}$/;
+const MINT_TRIES = 64;
+
+/**
+ * A fresh random id; when the instant already holds ballots, one that sorts after the highest of them (D-40 / D-36),
+ * re-drawn until it does. Expected ≤ 2 draws; 64 failures would mean the generator is broken, and the cast refuses.
+ */
+export function mintBallotId(mustExceed: string | null, draw: () => string = () => randomBytes(6).toString('hex')): string {
+  for (let i = 0; i < MINT_TRIES; i++) {
+    const id = `B-${draw()}`;
+    if (!BALLOT_ID_RE.test(id)) throw new Error(`minted ballot id ${id} is not B-<12 hex> (D-40)`);
+    if (mustExceed === null || compareStrings(id, mustExceed) > 0) return id;
+  }
+  throw new Error(`could not mint a ballot id after ${mustExceed} in ${MINT_TRIES} draws (D-40)`);
+}
+
 /** D-20: the unit's name under the meeting's salt; deterministic, so duplicate detection needs no sealed link. */
 export const unitHashFor = (meetingRowId: string, unitRef: string, salt: string) => sha256Hex(`${meetingRowId}|${unitRef}|${salt}`);
 
@@ -60,6 +77,10 @@ export async function castInTx(tx: Tx, input: CastInput, nonce: string): Promise
   const castAt = timestamp(input.castAt, 'castAt'); // validated before it is compared with anything
   const [latest] = await tx.$queryRaw<{ at: string | null }[]>`SELECT max("castAt") AS at FROM "Ballot" WHERE "meetingId" = ${head.id}::uuid`;
   if (latest?.at && castAt < latest.at) throw new CastOutOfOrder(castAt, latest.at);
+  // D-40 amends D-36: ids are random, so at an instant that already has ballots the new id must sort after them
+  // (B-4 orders equal instants by id). Compared in JS with the engine's own string order, not the database collation.
+  const sameInstant = latest?.at === castAt ? (await tx.ballot.findMany({ where: { meetingId: head.id, castAt }, select: { ballotId: true } })).map((r) => r.ballotId) : [];
+  const highest = sameInstant.reduce<string | null>((m, id) => (m === null || compareStrings(id, m) > 0 ? id : m), null);
 
   // 2. the roster as of the record date, and the unit's current counted ballot
   const roster = await readRoster(tx, head.orgId);
@@ -73,8 +94,12 @@ export async function castInTx(tx: Tx, input: CastInput, nonce: string): Promise
   const prior = countedRows[0];
   const counted: CountedUnits = prior ? new Map([[input.unitId, prior.viaProxy ? 'proxy' : '']]) : new Map();
 
-  // 3. the public id
-  const ballotId = input.ballotId ?? `B-${String((await tx.ballot.count({ where: { meetingId: head.id } })) + 1).padStart(3, '0')}`;
+  // 3. the public id (D-40): random, so arrival order cannot be read from it; never Math.random
+  let ballotId: string;
+  if (input.ballotId !== undefined) {
+    if (highest !== null && compareStrings(input.ballotId, highest) <= 0) throw new CastOutOfOrder(`${castAt} ${input.ballotId}`, `${castAt} ${highest}`);
+    ballotId = input.ballotId;
+  } else ballotId = mintBallotId(highest);
 
   // 4. the Phase 1 rules, unchanged
   const b: Ballot = { ballot_id: ballotId, unit_id: input.unitId, cast_by: input.castBy, via_proxy_id: input.viaProxyId, cast_at: input.castAt, nonce, choices: input.choices };

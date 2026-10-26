@@ -61,12 +61,12 @@ describe('2.5 close and seal, 2.6 recount, 2.7 tamper', () => {
     const v = await recountMeeting(replay.meetingRowId);
     expect(v.differences).toEqual([]);
     expect(v.matches).toBe(true);
-    expect(v.tally.meeting_commitment).toBe('a703d58b3c148c601c9eed219095cb0e4d3894c1d1b86f774d8ac077d6c5037a');
+    expect(v.tally.meeting_commitment).toBe('3e6f583ccb0a793735a01944e1a9deaf3289f431e0060e2dfaa11c79bb9337e9');
     expect(v.tally.ballots_counted).toBe(87);
     expect(v.tally.ballot_results.every((r) => r.unit_id === '' && r.cast_by === '')).toBe(true);
   });
 
-  it('the published export equals fixtures/published_ballots.csv byte for byte (C-6, D-32)', async () => {
+  it('the published export equals fixtures/published_ballots.csv byte for byte (C-6 with bps_as_of, D-37)', async () => {
     const { rows, csv } = await publishedList(replay.meetingRowId);
     expect(rows).toHaveLength(113);
     expect(csv).toBe(readFileSync('fixtures/published_ballots.csv', 'utf8'));
@@ -84,7 +84,7 @@ describe('2.5 close and seal, 2.6 recount, 2.7 tamper', () => {
   });
 
   it('2.7 after close an UPDATE on Ballot is refused by the trigger, as the app role and as the owner', async () => {
-    const b = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-001' } });
+    const b = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-d06b0ce017f2' } });
     await expect(asApp((tx) => tx.$executeRawUnsafe(`UPDATE "Ballot" SET "choicesCanonical" = '{}' WHERE id = '${b.id}'`))).rejects.toMatchObject({ name: 'PrivilegeDenied', sqlState: '42501' });
     const owner = asOwner((tx) => tx.$executeRawUnsafe(`UPDATE "Ballot" SET "choicesCanonical" = '{}' WHERE id = '${b.id}'`));
     await expect(owner).rejects.toBeInstanceOf(AppendOnlyViolation);
@@ -102,7 +102,7 @@ describe('2.5 close and seal, 2.6 recount, 2.7 tamper', () => {
   });
 
   it('2.7 the commitment binds the rows: a superuser who disables the trigger and flips one choice is caught by the recount', async () => {
-    const b = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-001' } });
+    const b = await db.ballot.findFirstOrThrow({ where: { ballotId: 'B-d06b0ce017f2' } });
     expect(b.choicesCanonical).toContain('"R1":"YES"');
     const flipped = b.choicesCanonical.replace('"R1":"YES"', '"R1":"NO"');
     await db.$executeRawUnsafe('ALTER TABLE "Ballot" DISABLE TRIGGER "Ballot_append_only"');

@@ -47,16 +47,16 @@ describe('tallyFromResults (task 2.6)', () => {
     const res = tallyFromResults(f.meeting, 120, 10000, resultsFromStored(f.meeting, rows));
     expect(res.meeting_commitment).toBe(ref.meeting_commitment);
     expect(res.ballot_results.map((r) => r.ballot_id)).toEqual(ref.ballot_results.map((r) => r.ballot_id)); // cast order, not input order
-    const b012 = res.ballot_results.find((r) => r.ballot_id === 'B-012')!;
+    const b012 = res.ballot_results.find((r) => r.ballot_id === 'B-24a5d8fa1964')!;
     expect(b012.selections.E2).toEqual({ status: 'VOID', code: 'OVERVOTE', value: null });
     expect(b012.selections.R2).toEqual({ status: 'VOID', code: 'INVALID_CHOICE', value: null });
-    const b062 = res.ballot_results.find((r) => r.ballot_id === 'B-062')!;
+    const b062 = res.ballot_results.find((r) => r.ballot_id === 'B-da48c5729a09')!;
     expect(b062.unknown_contests).toEqual(['R9']);
   });
 
   it('a rejected row carries no selections, whatever its choices say', () => {
     const rows = stored();
-    const late = rows.find((r) => r.ballot_id === 'B-073')!;
+    const late = rows.find((r) => r.ballot_id === 'B-d4c80a6d785a')!;
     expect(late.code).toBe('LATE');
     const r = resultsFromStored(f.meeting, [late])[0]!;
     expect(r.selections).toEqual({});
@@ -66,7 +66,7 @@ describe('tallyFromResults (task 2.6)', () => {
 
   it('one changed stored row changes the meeting commitment (the commitment binds the rows)', () => {
     const rows = stored();
-    const i = rows.findIndex((r) => r.ballot_id === 'B-001');
+    const i = rows.findIndex((r) => r.ballot_id === 'B-d06b0ce017f2');
     rows[i] = { ...rows[i]!, choices_canonical: rows[i]!.choices_canonical.replace('"R1":"YES"', '"R1":"NO"') };
     const res = tallyFromResults(f.meeting, 120, 10000, resultsFromStored(f.meeting, rows));
     expect(res.merkle_root).toBe(ref.merkle_root); // the receipt was not touched, so the root stands

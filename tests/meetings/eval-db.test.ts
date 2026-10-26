@@ -10,5 +10,5 @@ it('tally:eval:db: 0 differences against the oracle, the published export equal,
   expect(r.recount.matches).toBe(true);
   expect(r.closed).toBe(true);
   expect([r.recount.tally.ballots_received, r.recount.tally.ballots_counted, r.recount.tally.ballots_rejected]).toEqual([113, 87, 26]);
-  expect(r.recount.tally.meeting_commitment).toBe('a703d58b3c148c601c9eed219095cb0e4d3894c1d1b86f774d8ac077d6c5037a');
+  expect(r.recount.tally.meeting_commitment).toBe('3e6f583ccb0a793735a01944e1a9deaf3289f431e0060e2dfaa11c79bb9337e9');
 }, 120_000);
