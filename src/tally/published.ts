@@ -1,27 +1,32 @@
-// Task 1.11: the recount from the published list (C-6, C-7; D-18). The list is `(receipt, ballot_id, status,
-// code, choices_canonical)` sorted by receipt, with no unit, caster or timestamp. From it alone anyone recomputes:
-// the Merkle root, received/counted/rejected by code, and every UNITS-mode total (by re-running S-1..S-5 on the
-// canonical choices of the counted ballots). What it CANNOT recompute, and says so (decisions D-28): the
-// WEIGHTED totals and bps_represented, because the frozen list carries no share per ballot. The commitments bind
-// both halves, so the recount takes the published WEIGHTED totals as given, checks the UNITS half against the
-// published totals, and recomputes the commitments from the root and the published totals.
-import { evaluateSelection } from './ballots';
-import { compareStrings, type Json, sortedStrings } from './canonical';
-import { RESOLUTION_BASES, RESOLUTION_CHOICES, type BallotRejectCode, type ElectionMode, type ResolutionBasis, type ResolutionChoice, type SelectionVoidCode } from './codes';
-import { contestCommitment, meetingCommitment, merkleRoot } from './commit';
+// Task 1.11, amended by D-37: the recount from the published list (C-6, C-7; D-18). The list is `(receipt,
+// ballot_id, status, code, bps_as_of, choices_canonical)` sorted by receipt, with no unit, caster or timestamp.
+// Since D-37 it carries each ballot's share as of the record date, so from the list alone — plus the unit count
+// from the published quorum report, which the rules JSON does not carry — anyone recomputes the WHOLE tally:
+// the Merkle root, received/counted/rejected by code, every total in both modes, units and bps represented, every
+// result under the binding rule and under all six bases, and every commitment. The list runs through the same
+// function the engine and the Phase 2 recount end in (`resultsFromStored` → `tallyFromResults`), so there is one
+// tally, not a second implementation of it.
+//
+// What the list still cannot give, and the recount says so: the direct/proxy split of the quorum report (no
+// proxy flag is published) and anything about who cast a ballot (D-2).
+import { compareStrings, type Json } from './canonical';
+import type { BallotRejectCode, ElectionMode } from './codes';
 import type { CsvRow } from './csv';
 import { InputInvalid } from './errors';
 import { parseChoices } from './load';
 import type { Meeting } from './rules';
-import { seatsFromTotals, type SeatResult } from './seats';
-import { resolutionPasses } from './thresholds';
+import { resultsFromStored, tallyFromResults, type ContestTally, type MeetingTally, type StoredBallot } from './tally';
+import type { Timestamp } from './time';
 
 export type PublishedBallot = {
   receipt: string;
   ballot_id: string;
   status: 'COUNTED' | 'REJECTED';
   code: BallotRejectCode | '';
+  /** the unit's share as of the record date (E-3); 0 for an UNKNOWN_UNIT ballot (D-37) */
+  bps_as_of: number;
   choices: Record<string, Json>;
+  choices_canonical: string;
 };
 
 export function toPublished(rows: CsvRow[]): PublishedBallot[] {
@@ -30,7 +35,17 @@ export function toPublished(rows: CsvRow[]): PublishedBallot[] {
     const status = r.status;
     if (status !== 'COUNTED' && status !== 'REJECTED') throw new InputInvalid(`${w}.status`, `unknown status ${String(status)}`);
     if (!/^[0-9a-f]{64}$/.test(r.receipt ?? '')) throw new InputInvalid(`${w}.receipt`, 'expected 64 lowercase hex chars');
-    return { receipt: r.receipt!, ballot_id: r.ballot_id ?? '', status, code: (r.code ?? '') as BallotRejectCode | '', choices: parseChoices(r.choices_canonical ?? '', `${w}.choices_canonical`) };
+    if (!/^\d+$/.test(r.bps_as_of ?? '')) throw new InputInvalid(`${w}.bps_as_of`, `expected a non-negative integer, got ${JSON.stringify(r.bps_as_of)}`);
+    const canonical = r.choices_canonical ?? '';
+    return {
+      receipt: r.receipt!,
+      ballot_id: r.ballot_id ?? '',
+      status,
+      code: (r.code ?? '') as BallotRejectCode | '',
+      bps_as_of: Number(r.bps_as_of),
+      choices: parseChoices(canonical, `${w}.choices_canonical`),
+      choices_canonical: canonical,
+    };
   });
 }
 
@@ -51,112 +66,43 @@ export function toPublishedTotals(rows: CsvRow[]): PublishedTotals {
 
 export type RecountCheck = { name: string; recomputed: string; published: string | undefined; verdict: 'ok' | 'differs' | 'not-recomputable' | 'unpublished' };
 
-export type RecountContest = {
-  contest_id: string;
-  kind: 'ELECTION' | 'RESOLUTION';
-  counted: number;
-  voted: number;
-  blank: number;
-  void_by_code: Record<string, number>;
-  /** recomputed from the list */
-  units_totals: Record<string, number>;
-  /** taken from the published totals; not recomputable from C-6 as frozen */
-  weighted_totals: Record<string, number> | undefined;
-  /** recomputed in UNITS mode (elections) or under the unit bases (resolutions) */
-  units_result: SeatResult | Partial<Record<ResolutionBasis, boolean>>;
-  commitment: string | undefined;
-};
+/** The same totals the engine commits to, in the same `contest → mode → option` shape as expected_totals.csv. */
+export function totalsByMode(c: ContestTally): Record<ElectionMode, Record<string, number>> {
+  return c.kind === 'ELECTION' ? { UNITS: c.totals.UNITS, WEIGHTED: c.totals.WEIGHTED } : { UNITS: c.totals.units, WEIGHTED: c.totals.bps };
+}
 
-export type Recount = {
-  received: number;
-  counted: number;
-  rejected: number;
-  rejected_by_code: Record<string, number>;
-  merkle_root: string;
-  contests: RecountContest[];
-  meeting_commitment: string | undefined;
-  checks: RecountCheck[];
-};
+export type Recount = { tally: MeetingTally; checks: RecountCheck[] };
 
-const countBy = (keys: readonly string[]): Record<string, number> => {
-  const m = new Map<string, number>();
-  for (const k of keys) m.set(k, (m.get(k) ?? 0) + 1);
-  const out: Record<string, number> = {};
-  for (const k of [...m.keys()].sort(compareStrings)) out[k] = m.get(k)!;
-  return out;
-};
+const fmtTotals = (t: Readonly<Record<string, number>>) => Object.keys(t).sort(compareStrings).map((k) => `${k} ${t[k]}`).join(', ');
 
-const fmtCounts = (c: Record<string, number>) => Object.keys(c).sort(compareStrings).map((k) => `${k} ${c[k]}`).join(', ') || 'none';
-const fmtTotals = (t: Record<string, number>) => sortedStrings(Object.keys(t)).map((k) => `${k} ${t[k]}`).join(', ');
+/** A placeholder instant: the list has no timestamps (C-6); the order of results does not enter any total or the root. */
+const NO_TIME = '0000-01-01T00:00:00' as Timestamp;
 
 /**
  * Recount a meeting from its published list. `totalUnits` comes from the published quorum report (the rules JSON
- * carries total_share_bps but not the unit count); `publishedTotals` supplies the WEIGHTED half the list lacks.
+ * carries total_share_bps but not the unit count); `publishedTotals`, when given, is compared, never used.
  */
-export function recountFromPublished(meeting: Meeting, list: readonly PublishedBallot[], publishedTotals: PublishedTotals | undefined, totalUnits: number | undefined): Recount {
+export function recountFromPublished(meeting: Meeting, list: readonly PublishedBallot[], totalUnits: number, publishedTotals?: PublishedTotals): Recount {
+  const rows: StoredBallot[] = list.map((p) => ({
+    ballot_id: p.ballot_id,
+    via_proxy: false, // not published; only the quorum report's direct/proxy split reads it, and that split is reported not-recomputable
+    cast_at: NO_TIME,
+    bps: p.bps_as_of,
+    status: p.status,
+    code: p.code,
+    receipt: p.receipt,
+    choices_canonical: p.choices_canonical,
+  }));
+  const t = tallyFromResults(meeting, totalUnits, meeting.rules.total_share_bps, resultsFromStored(meeting, rows));
   const checks: RecountCheck[] = [];
-  const root = merkleRoot(list.map((p) => p.receipt));
-  const counted = list.filter((p) => p.status === 'COUNTED');
-  const rejected = list.filter((p) => p.status === 'REJECTED');
-  const contests: RecountContest[] = [];
-  const commitments: Record<string, string> = {};
-  let allCommitments = true;
-  for (const c of [...meeting.contests].sort((a, b) => compareStrings(a.contest_id, b.contest_id))) {
-    const cid = c.contest_id;
-    const sel = counted.map((p) => evaluateSelection(c, p.choices[cid]));
-    const voted = sel.filter((s) => s.status === 'VOTED').length;
-    const blank = sel.filter((s) => s.status === 'BLANK').length;
-    const voids = countBy(sel.filter((s) => s.status === 'VOID').map((s) => s.code as SelectionVoidCode));
-    const pub = publishedTotals?.[cid];
-    let unitsTotals: Record<string, number>;
-    let unitsResult: RecountContest['units_result'];
-    let totalsJson: Json | undefined;
-    if (c.kind === 'ELECTION') {
-      unitsTotals = {};
-      for (const cand of c.candidates) unitsTotals[cand.id] = 0;
-      for (const s of sel) if (s.status === 'VOTED') for (const id of s.value as string[]) unitsTotals[id] = unitsTotals[id]! + 1;
-      unitsResult = seatsFromTotals(unitsTotals, c.seats);
-      if (pub?.WEIGHTED) totalsJson = { UNITS: unitsTotals, WEIGHTED: pub.WEIGHTED };
-    } else {
-      const u = { YES: 0, NO: 0, ABSTAIN: 0 } as Record<ResolutionChoice, number>;
-      for (const s of sel) {
-        if (s.status === 'VOTED') u[s.value as ResolutionChoice] += 1;
-        else if (s.status === 'BLANK') u.ABSTAIN += 1;
-      }
-      unitsTotals = u;
-      const unitBases: ResolutionBasis[] = ['MAJORITY_OF_VOTES_CAST', 'MAJORITY_OF_UNITS_REPRESENTED', 'MAJORITY_OF_ALL_UNITS', 'TWO_THIRDS_OF_VOTES_CAST'];
-      const by: Partial<Record<ResolutionBasis, boolean>> = {};
-      for (const b of unitBases) {
-        if (b === 'MAJORITY_OF_ALL_UNITS' && totalUnits === undefined) continue;
-        by[b] = resolutionPasses(b, { yes: u.YES, no: u.NO, yes_bps: 0, no_bps: 0, represented_units: counted.length, total_units: totalUnits ?? 0, total_bps: meeting.rules.total_share_bps });
-      }
-      unitsResult = by;
-      if (pub?.WEIGHTED) {
-        const w = { YES: 0, NO: 0, ABSTAIN: 0 } as Record<ResolutionChoice, number>;
-        for (const k of RESOLUTION_CHOICES) w[k] = pub.WEIGHTED[k] ?? 0;
-        totalsJson = { units: u, bps: w };
-      }
+  for (const c of t.contests) {
+    const mine = totalsByMode(c);
+    const pub = publishedTotals?.[c.contest_id];
+    for (const mode of ['UNITS', 'WEIGHTED'] as const) {
+      const p = pub?.[mode];
+      checks.push({ name: `${c.contest_id} ${mode} totals`, recomputed: fmtTotals(mine[mode]), published: p ? fmtTotals(p) : undefined, verdict: !p ? 'unpublished' : fmtTotals(mine[mode]) === fmtTotals(p) ? 'ok' : 'differs' });
     }
-    checks.push({ name: `${cid} UNITS totals`, recomputed: fmtTotals(unitsTotals), published: pub?.UNITS ? fmtTotals(pub.UNITS) : undefined, verdict: !pub?.UNITS ? 'unpublished' : fmtTotals(unitsTotals) === fmtTotals(pub.UNITS) ? 'ok' : 'differs' });
-    checks.push({ name: `${cid} WEIGHTED totals`, recomputed: '(no bps on the published list)', published: pub?.WEIGHTED ? fmtTotals(pub.WEIGHTED) : undefined, verdict: 'not-recomputable' });
-    let commitment: string | undefined;
-    if (totalsJson !== undefined) {
-      commitment = contestCommitment(root, cid, totalsJson);
-      commitments[cid] = commitment;
-    } else allCommitments = false;
-    contests.push({ contest_id: cid, kind: c.kind, counted: counted.length, voted, blank, void_by_code: voids, units_totals: unitsTotals, weighted_totals: pub?.WEIGHTED, units_result: unitsResult, commitment });
   }
-  return {
-    received: list.length,
-    counted: counted.length,
-    rejected: rejected.length,
-    rejected_by_code: countBy(rejected.map((p) => p.code)),
-    merkle_root: root,
-    contests,
-    meeting_commitment: allCommitments ? meetingCommitment(commitments) : undefined,
-    checks,
-  };
+  checks.push({ name: 'direct / proxy units', recomputed: '(no proxy flag on the published list)', published: undefined, verdict: 'not-recomputable' });
+  return { tally: t, checks };
 }
-
-export const RESOLUTION_BASES_UNIT_ONLY = RESOLUTION_BASES.filter((b) => !b.includes('WEIGHTED'));
-export { fmtCounts as formatCounts };
