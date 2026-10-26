@@ -10,3 +10,11 @@ export async function linkedOwner(tx: Tx, orgId: string, userId: string): Promis
   const link = await tx.ownerLink.findUnique({ where: { orgId_userId: { orgId, userId } }, include: { owner: { select: { id: true, ownerId: true, name: true } } } });
   return link ? { ownerRowId: link.owner.id, ownerId: link.owner.ownerId, name: link.owner.name } : null;
 }
+
+/** The unit rows a linked member may see the dues of (O-8; exit criterion: not another unit's): any unit their owner row has an ownership on. */
+export async function ownUnitRowIds(tx: Tx, orgId: string, userId: string): Promise<Set<string>> {
+  const me = await linkedOwner(tx, orgId, userId);
+  if (!me) return new Set();
+  const rows = await tx.ownership.findMany({ where: { ownerId: me.ownerRowId, unit: { orgId } }, select: { unitId: true } });
+  return new Set(rows.map((r) => r.unitId));
+}

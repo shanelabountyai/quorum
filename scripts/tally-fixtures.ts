@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { parseCsv, type CsvRow } from '../src/tally/csv';
 import { toBallots, toLedger, toOwnerships, toProxies, toShares, toUnits } from '../src/tally/load';
 import { parseMeeting, type Meeting } from '../src/tally/rules';
+import { rosterFromCsv } from '../src/meetings/import';
 import type { Ballot, LedgerEntry, Ownership, Proxy, Unit, UnitShare } from '../src/tally/types';
 
 export const FIXTURES_DIR = 'fixtures';
@@ -39,16 +40,8 @@ export function loadFixtures(dir = FIXTURES_DIR, overrides: Partial<{ meeting: s
 export const readExpected = (name: 'expected_ballots' | 'expected_totals' | 'expected_results' | 'expected_quorum' | 'published_ballots', dir = FIXTURES_DIR): CsvRow[] =>
   readCsv(join(dir, `${name}.csv`));
 
-/** The roster as the Phase 2 loader wants it: units with their type columns, owners.csv, ledger rows with entry ids and memos. */
+/** The roster as the Phase 2 loader wants it: units with their type columns, owners.csv, ledger rows with entry ids and memos. Parsed by the product's own import (src/meetings/import.ts). */
 export function loadRosterFixtures(dir = FIXTURES_DIR) {
-  const at = (name: string) => join(dir, name);
-  const int = (s: string | undefined) => (s && /^-?\d+$/.test(s) ? Number(s) : 0);
-  const ledgerRows = readCsv(at('assessments.csv'));
-  return {
-    units: readCsv(at('units.csv')).map((r) => ({ unit_id: r.unit_id!, unit_type: r.unit_type ?? '', building: r.building ?? '', floor: int(r.floor) })),
-    shares: toShares(readCsv(at('unit_shares.csv'))),
-    owners: readCsv(at('owners.csv')).map((r) => ({ owner_id: r.owner_id!, name: r.name ?? '', email: r.email ?? '' })),
-    ownerships: toOwnerships(readCsv(at('ownerships.csv'))),
-    ledger: ledgerRows.map((r, i) => ({ ...toLedger([r])[0]!, entry_id: r.entry_id ?? `L-${String(i + 1).padStart(5, '0')}`, memo: r.memo ?? '' })),
-  };
+  const text = (name: string) => readFileSync(join(dir, name), 'utf8');
+  return rosterFromCsv({ units: text('units.csv'), unit_shares: text('unit_shares.csv'), owners: text('owners.csv'), ownerships: text('ownerships.csv'), assessments: text('assessments.csv') });
 }

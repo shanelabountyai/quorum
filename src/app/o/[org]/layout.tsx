@@ -10,10 +10,10 @@ export default async function OrgLayout({ children, params }: { children: React.
   const base = `/o/${ctx.slug}`;
   return (
     <>
-      <nav>
-        <strong>{org.name}</strong> · <Link href={base}>Home</Link> · <Link href={`${base}/projects`}>Projects</Link> · <Link href={`${base}/settings/members`}>Members</Link>
-        {can(ctx.role, 'org.delete') && <> · <Link href={`${base}/settings/danger`}>Delete org</Link></>}
-        {' · '}<Link href="/onboarding">Your orgs</Link> · <Link href="/account/security">Account</Link>
+      <nav aria-label="Association">
+        <strong>{org.name}</strong> · <Link href={base}>Home</Link> · <Link href={`${base}/meetings`}>Meetings</Link> · <Link href={`${base}/roster`}>Roster</Link> · <Link href={`${base}/ledger`}>Ledger</Link> · <Link href={`${base}/violations`}>Violations</Link> · <Link href={`${base}/settings/members`}>Members</Link>
+        {can(ctx.role, 'org.delete') && <> · <Link href={`${base}/settings/archive`}>Archive</Link> · <Link href={`${base}/settings/danger`}>Delete org</Link></>}
+        {' · '}<Link href="/associations">Your associations</Link> · <Link href="/account/security">Account</Link>
       </nav>
       {children}
     </>
