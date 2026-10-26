@@ -35,11 +35,12 @@ enum BallotCode {
   PROXY_SUPERSEDED_BY_OWNER
 }
 
-/// E-4 reads exactly these three. D-21's CREDIT arrives in Phase 3 with its engine change and golden case (D-35 c).
+/// Mirrors src/tally/codes.ts LEDGER_KINDS; E-4 reads all four, CREDIT like PAYMENT (D-41, GQ-12). Tested against pg_enum.
 enum LedgerKind {
   CHARGE
   PAYMENT
   FINE
+  CREDIT
 }
 
 /// One association = one org (D-5). The thing that votes.

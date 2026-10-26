@@ -28,13 +28,13 @@ export function shareBps(shares: readonly UnitShare[], unitId: string, asOf: Cal
   return best.share_bps;
 }
 
-/** E-4: Σ CHARGE + FINE − Σ PAYMENT over entries dated <= asOf (inclusive). Integer cents. */
+/** E-4: Σ CHARGE + FINE − Σ (PAYMENT + CREDIT) over entries dated <= asOf (inclusive). Integer cents. A CREDIT reduces like a PAYMENT (D-41). */
 export function balanceCents(ledger: readonly LedgerEntry[], unitId: string, asOf: CalendarDay): number {
   let bal = 0;
   for (const e of ledger) {
     if (e.unit_id !== unitId || e.date > asOf) continue;
     if (e.kind === 'CHARGE' || e.kind === 'FINE') bal += e.amount_cents;
-    else if (e.kind === 'PAYMENT') bal -= e.amount_cents;
+    else if (e.kind === 'PAYMENT' || e.kind === 'CREDIT') bal -= e.amount_cents;
     else throw new RulesInvalid('assessments.kind', `unknown ledger kind ${String((e as { kind: unknown }).kind)}`);
   }
   return bal;

@@ -1,4 +1,4 @@
-// GQ-01..GQ-05 (brief §10) and the fixture's as-of traps (task 1.5): A-301 = 60, B-610 = 151, A-407 → O-138 only,
+// GQ-01..GQ-05 and GQ-12 (brief §10) and the fixture's as-of traps (task 1.5): A-301 = 60, B-610 = 151, A-407 → O-138 only,
 // delinquent set {A-110, A-204, A-508, B-108, B-509}.
 import { describe, expect, it } from 'vitest';
 import { balanceCents, delinquentUnits, isMember, ownersOfUnit, shareBps } from '../../src/tally/asof';
@@ -37,6 +37,18 @@ describe('as-of lookups (E-1..E-5)', () => {
     const led = [{ unit_id: 'U1', kind: 'FINE' as const, amount_cents: 15000, date: day('2026-09-20') }];
     expect(balanceCents(led, 'U1', day('2026-11-14'))).toBe(15000);
     expect(delinquentUnits(led, ['U1'], day('2026-11-14'))).toEqual(new Set(['U1']));
+  });
+  it('GQ-12 a CREDIT reduces the balance like a payment; one dated after the record date does not count (D-41)', () => {
+    const led = [
+      { unit_id: 'U1', kind: 'CHARGE' as const, amount_cents: 19600, date: day('2026-11-01') },
+      { unit_id: 'U1', kind: 'CREDIT' as const, amount_cents: 4600, date: day('2026-11-10') },
+      { unit_id: 'U1', kind: 'PAYMENT' as const, amount_cents: 15000, date: day('2026-11-12') },
+    ];
+    expect([balanceCents(led, 'U1', day('2026-11-09')), balanceCents(led, 'U1', day('2026-11-10')), balanceCents(led, 'U1', day('2026-11-14'))]).toEqual([19600, 15000, 0]);
+    expect(delinquentUnits(led, ['U1'], day('2026-11-14'))).toEqual(new Set());
+    const late = [led[0]!, { unit_id: 'U1', kind: 'CREDIT' as const, amount_cents: 19600, date: day('2026-11-15') }];
+    expect(balanceCents(late, 'U1', day('2026-11-14'))).toBe(19600);
+    expect(delinquentUnits(late, ['U1'], day('2026-11-14'))).toEqual(new Set(['U1']));
   });
 });
 

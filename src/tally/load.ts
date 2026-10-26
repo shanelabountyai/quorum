@@ -3,6 +3,7 @@
 // No I/O here: the scripts and tests read the files and hand the text in.
 import type { Json } from './canonical';
 import type { CsvRow } from './csv';
+import { LEDGER_KINDS } from './codes';
 import { InputInvalid } from './errors';
 import { calendarDay, timestamp } from './time';
 import type { Ballot, LedgerEntry, LedgerKind, Ownership, Proxy, Unit, UnitShare } from './types';
@@ -20,7 +21,6 @@ const int = (s: string, where: string): number => {
   return n;
 };
 
-const LEDGER_KINDS: readonly LedgerKind[] = ['CHARGE', 'PAYMENT', 'FINE'];
 
 export const toUnits = (rows: CsvRow[]): Unit[] => rows.map((r, i) => ({ unit_id: need(r, 'unit_id', `units[${i}]`) }));
 

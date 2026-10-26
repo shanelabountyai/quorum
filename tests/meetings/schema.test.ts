@@ -5,7 +5,7 @@
 // applies the migrations from scratch first.
 import { beforeAll, describe, expect, it } from 'vitest';
 import { db } from '@/core/db';
-import { BALLOT_REJECT_CODES } from '@/tally/codes';
+import { BALLOT_REJECT_CODES, LEDGER_KINDS } from '@/tally/codes';
 import { asApp, asOwner } from '@/meetings/db';
 import { AppendOnlyViolation, CheckViolation, PrivilegeDenied } from '@/meetings/errors';
 import { resetAuthTables } from '../helpers/auth';
@@ -53,9 +53,9 @@ describe('2.10 the enums equal the TypeScript tuples', () => {
   it('BallotCode is BALLOT_REJECT_CODES, same members, same precedence order', async () => {
     expect(await labels('BallotCode')).toEqual([...BALLOT_REJECT_CODES]);
   });
-  it('BallotStatus is COUNTED | REJECTED and LedgerKind the three kinds E-4 reads', async () => {
+  it('BallotStatus is COUNTED | REJECTED and LedgerKind is LEDGER_KINDS, the four kinds E-4 reads (D-41)', async () => {
     expect(await labels('BallotStatus')).toEqual(['COUNTED', 'REJECTED']);
-    expect(await labels('LedgerKind')).toEqual(['CHARGE', 'PAYMENT', 'FINE']);
+    expect(await labels('LedgerKind')).toEqual([...LEDGER_KINDS]);
   });
 });
 

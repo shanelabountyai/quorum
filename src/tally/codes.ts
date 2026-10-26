@@ -40,6 +40,10 @@ export const RESOLUTION_BASES = [
 ] as const;
 export type ResolutionBasis = (typeof RESOLUTION_BASES)[number];
 
+/** E-4's ledger kinds; CREDIT reduces the balance like PAYMENT (D-41). The Postgres LedgerKind enum equals this tuple (tested). */
+export const LEDGER_KINDS = ['CHARGE', 'PAYMENT', 'FINE', 'CREDIT'] as const;
+export type LedgerKind = (typeof LEDGER_KINDS)[number];
+
 export const ELECTION_MODES = ['UNITS', 'WEIGHTED'] as const;
 export type ElectionMode = (typeof ELECTION_MODES)[number];
 

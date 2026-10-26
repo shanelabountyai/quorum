@@ -8,7 +8,8 @@ export type Unit = { unit_id: string };
 export type UnitShare = { unit_id: string; share_bps: number; effective_from: CalendarDay };
 /** E-1: covers [from_date, to_date); an empty to_date is open. */
 export type Ownership = { unit_id: string; owner_id: string; from_date: CalendarDay; to_date: CalendarDay | '' };
-export type LedgerKind = 'CHARGE' | 'PAYMENT' | 'FINE';
+import type { LedgerKind } from './codes';
+export type { LedgerKind };
 export type LedgerEntry = { unit_id: string; kind: LedgerKind; amount_cents: number; date: CalendarDay };
 export type Proxy = {
   proxy_id: string;
