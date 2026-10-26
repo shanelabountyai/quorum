@@ -66,3 +66,4 @@ Model: Sonnet (prose; no engine logic). PR #1 still open, never merged by the ag
 | 2026-10-26 | 98e85f6 (Phase 3 3.1–3.7) | https://github.com/shanelabountyai/quorum/actions/runs/40353005303 | **red** — `playwright test`: the template's `onboarding.spec.ts` expected the template's empty org home, which 3.1 replaced; fixed in 35d3ab9 |
 
 | 2026-10-26 | 35d3ab9 (3.8 e2e + axe, onboarding fix — the Phase 3 code head) | https://github.com/shanelabountyai/quorum/actions/runs/40355829930 | **green** — lint, typecheck, drift, tally:eval, fixtures:check, migrate deploy + diff, tally:eval:db, vitest, 15 e2e with axe; modules-removed green |
+| 2026-10-26 | 888d79f (port 6200, D-54; DEMO.md) | https://github.com/shanelabountyai/quorum/actions/runs/40373887534 | **green** — e2e on 6200 |
