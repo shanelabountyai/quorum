@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, ci-proof-1-14]
     tags: ['v*']
     # Docs-only pushes cost Actions minutes and test nothing (Gavel's CI, 2026-10-19).
     paths-ignore: ['docs/**', '**.md']
