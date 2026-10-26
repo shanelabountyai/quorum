@@ -116,8 +116,8 @@ test('a homeowner whose invite matched the roster is linked, casts, and a second
   await again.getByRole('button', { name: 'Cast ballot' }).click();
   await expect(again.getByRole('heading', { name: 'Ballot received and rejected: DUPLICATE_UNIT' })).toBeVisible();
 
-  // a homeowner cannot open the desk, another unit's statement, or the delinquent list
-  expect((await page.goto(`${meetingUrl}/desk`))!.status()).toBeGreaterThanOrEqual(400);
+  // a homeowner cannot open the desk (404, D-54 — not the 500 D-45 stated), another unit's statement, or the delinquent list
+  expect((await page.goto(`${meetingUrl}/desk`))!.status()).toBe(404);
   const other = (await db.query(`SELECT u.id FROM "Unit" u JOIN "Org" o ON o.id = u."orgId" WHERE o.slug = $1 AND u."unitId" = 'B-610'`, [SLUG])).rows[0].id;
   expect((await page.goto(`/o/${SLUG}/ledger/${other}`))!.status()).toBe(404);
   await page.goto(meetingUrl);

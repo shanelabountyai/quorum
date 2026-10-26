@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { requireOrg } from '@/core/authz/guards';
+import { can } from '@/core/authz/permissions';
 import { CastForm } from '@/components/cast-form';
 import { contestFields } from '@/components/contest-fields';
 import { RECEIPT_LIMIT, ScopeNote } from '@/components/honesty';
@@ -10,8 +12,11 @@ import { deskCastAction, deskProxyCastAction } from './actions';
 export const metadata = { title: 'Desk' };
 
 // Task 3.2, the desk (D-39 b): board and manager cast for an owner chosen from the roster, or for a proxy holder.
+// D-54 (owner decision, reverses D-45 here): anyone else is notFound — the same answer as a meeting that does not
+// exist — decided from the membership row alone, before any meeting, roster or proxy row is read.
 export default async function Desk({ params }: { params: Promise<{ org: string; id: string }> }) {
-  const ctx = await requireOrg((await params).org, 'org.update');
+  const ctx = await requireOrg((await params).org);
+  if (!can(ctx.role, 'org.update')) notFound();
   const { id } = await params;
   const v = await asApp(async (tx) => {
     const head = await meetingInOrg(tx, ctx.orgId, id);
