@@ -80,6 +80,7 @@ model Owner {
   name           String         @default("")
   email          String         @default("") // synthetic, example.com (D-1)
   ownerships     Ownership[]
+  link           OwnerLink?
   grantedProxies Proxy[]        @relation("ProxyGrantor")
   heldProxies    Proxy[]        @relation("ProxyHolder")
   castBallots    BallotSecret[] @relation("SecretCaster")
@@ -215,6 +216,9 @@ model BallotSecret {
   viaProxyRef String  @default("")
   viaProxyId  String? @db.Uuid
   viaProxy    Proxy?  @relation(fields: [viaProxyId], references: [id], onDelete: Restrict)
+  /// D-39 (b): the user who entered the ballot — the owner's own linked user, or the desk operator. Sealed with the
+  /// rest of the link; never in the audit log, never on Ballot. No FK: an append-only row must not block a user's deletion.
+  enteredById String? @db.Uuid
 
   @@index([meetingId, unitRef])
 }
@@ -229,4 +233,29 @@ model ContestResult {
   commitment String  @db.Char(64) // C-4
 
   @@unique([meetingId, contestId])
+}
+
+/// D-39 (a): a foundation User who is a roster Owner. Written only by the trigger on "Invite" when an accepted
+/// invite's email equals Owner.email (case-insensitive); never by name. One link per owner; one owner per user per org.
+model OwnerLink {
+  id       String   @id @default(uuid()) @db.Uuid
+  orgId    String   @db.Uuid
+  org      Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  ownerId  String   @unique @db.Uuid
+  owner    Owner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  userId   String   @db.Uuid
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inviteId String?  @db.Uuid // the accepted invite that wrote the link
+  linkedAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([orgId, userId])
+}
+
+/// D-43: an org with append-only history is archived, never deleted. Append-only; Restrict keeps the org row.
+model OrgArchive {
+  orgId        String   @id @db.Uuid
+  org          Org      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  archivedAt   DateTime @default(now()) @db.Timestamptz(6)
+  archivedById String?  @db.Uuid // the user who archived; no FK, so the user can still delete their account
+  reason       String
 }

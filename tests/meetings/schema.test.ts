@@ -70,7 +70,7 @@ describe('2.2 append-only triggers', () => {
     const ledger = await db.ledgerEntry.create({ data: { unitId: unit.id, entryId: 'L1', kind: 'CHARGE', amountCents: 100, date: '2026-01-01' } });
     const proxy = await db.proxy.create({ data: { meetingId: meeting.id, proxyId: 'P1', grantorUnitId: unit.id, grantorOwnerId: owner.id, holderOwnerId: owner.id, receivedAt: '2026-11-01T10:00:00' } });
     // Ballot, BallotSecret, BallotStatusEvent only ever come from quorum_cast_ballot (D-33); the owner may call it too.
-    const [row] = await db.$queryRaw<{ id: string }[]>`SELECT quorum_cast_ballot(${meeting.id}::uuid, 'B-001', ${'c'.repeat(64)}, 0, '2026-11-02T10:00:00', false, '{}', ${'d'.repeat(64)}, ${'e'.repeat(64)}, 'UNKNOWN_UNIT'::"BallotCode", NULL, 'U-9', NULL, 'O1', ${owner.id}::uuid, '', NULL) AS id`;
+    const [row] = await db.$queryRaw<{ id: string }[]>`SELECT quorum_cast_ballot(${meeting.id}::uuid, 'B-001', ${'c'.repeat(64)}, 0, '2026-11-02T10:00:00', false, '{}', ${'d'.repeat(64)}, ${'e'.repeat(64)}, 'UNKNOWN_UNIT'::"BallotCode", NULL, 'U-9', NULL, 'O1', ${owner.id}::uuid, '', NULL, NULL) AS id`;
     const result = await db.contestResult.create({ data: { meetingId: meeting.id, contestId: 'E1', tally: {}, commitment: 'f'.repeat(64) } });
     ids = { Ballot: row!.id, BallotSecret: row!.id, LedgerEntry: ledger.id, Proxy: proxy.id, ContestResult: result.id, Meeting: meeting.id };
   });
