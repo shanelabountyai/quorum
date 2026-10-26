@@ -66,6 +66,15 @@ test('the board creates the meeting and records its proxies', async ({ page }) =
   await expect(page.getByRole('heading', { name: 'Proxies (49)' })).toBeVisible();
   await expect(page.getByText('Delinquent (balance above zero, E-4/E-5): A-110, A-204, A-508, B-108, B-509')).toBeVisible();
   await expectAccessible(page, 'meeting (open)', 'Quorum now');
+  // D-58: R2 (the roof) declared a special assessment of $180,000.00 before the first ballot
+  const assess = page.getByRole('region', { name: 'Special assessments' });
+  await assess.getByLabel('Resolution').selectOption('R2');
+  await assess.getByLabel('Amount in dollars').fill('180,000.00');
+  await assess.getByRole('button', { name: 'Declare special assessment' }).click();
+  await expect(assess.getByRole('status')).toContainText('R2 declared a special assessment of 18000000 cents');
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Special assessments' })).toContainText('AM-E2E/R2 Special assessment of $180,000 for roof replacement: $180000.00 (18000000 cents). Voting decides it');
+  await expectAccessible(page, 'meeting (assessment declared)', 'Voting decides it');
 });
 
 test('the desk casts for an owner; the receipt is shown once with its limit', async ({ page }) => {
@@ -81,6 +90,25 @@ test('the desk casts for an owner; the receipt is shown once with its limit', as
   await expect(direct.getByTestId('receipt')).toHaveText(/^[0-9a-f]{64}$/);
   await expect(direct.getByText('does not hide how you voted')).toBeVisible();
   await expectAccessible(page, 'desk (receipt shown)', 'Ballot counted');
+
+  // D-57: one paper proxy from O-001 (the homeowner below revokes it from their own page) and a desk revocation
+  await page.goto(meetingUrl);
+  const intake = page.locator('form', { has: page.getByRole('button', { name: 'Record proxy' }) });
+  const pick = async (label: string, text: string) => intake.getByLabel(label).selectOption({ label: (await intake.getByLabel(label).locator('option', { hasText: text }).first().textContent())! });
+  await pick('Unit', 'A-101');
+  await pick('Grantor', 'O-001 ');
+  await pick('Holder', 'O-002 ');
+  await page.getByRole('button', { name: 'Record proxy' }).click();
+  await expect(page.getByRole('status')).toContainText('Proxy P-050 recorded at');
+  await page.goto(`${meetingUrl}/desk`);
+  const revoke = page.getByRole('region', { name: 'Revoke a proxy for its grantor' });
+  await revoke.getByLabel('Proxy to revoke').selectOption({ label: (await revoke.getByLabel('Proxy to revoke').locator('option', { hasText: 'P-001:' }).textContent())! });
+  await revoke.getByLabel('Reason').fill('O-024 presented a signed revocation at the desk');
+  await revoke.getByRole('button', { name: 'Revoke proxy' }).click();
+  await expect(revoke.getByRole('status')).toContainText('Proxy P-001 revoked at');
+  const row = (await db.query(`SELECT r.channel, r.reason FROM "ProxyRevocation" r JOIN "Proxy" p ON p.id = r."proxyId" JOIN "Meeting" m ON m.id = p."meetingId" JOIN "Org" o ON o.id = m."orgId" WHERE o.slug = $1 AND p."proxyId" = 'P-001'`, [SLUG])).rows;
+  expect(row).toEqual([{ channel: 'DESK', reason: 'O-024 presented a signed revocation at the desk' }]);
+  await expectAccessible(page, 'desk (proxy revoked)', 'Proxy P-001 revoked at');
 });
 
 test('a homeowner whose invite matched the roster is linked, casts, and a second ballot for the unit is DUPLICATE_UNIT', async ({ page }) => {
@@ -99,6 +127,13 @@ test('a homeowner whose invite matched the roster is linked, casts, and a second
 
   await page.goto(`${meetingUrl}/vote`);
   await expectAccessible(page, 'vote', 'You are voting as roster owner');
+  // D-57: the grantor revokes the proxy they granted, from their own page
+  const granted = page.getByRole('region', { name: 'Proxies you granted' });
+  await granted.getByRole('button', { name: 'Revoke proxy P-050' }).click();
+  await expect(granted.getByRole('status')).toContainText('Proxy P-050 revoked at');
+  await expectAccessible(page, 'vote (proxy revoked)', 'Proxy P-050 revoked at');
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Proxies you granted' })).toContainText(/P-050: unit A-101, held by O-002 .*Revoked at \d{4}-/);
   const ballot = page.getByRole('region').filter({ has: page.getByRole('heading', { name: /^Unit / }) }).first();
   await ballot.getByRole('checkbox', { name: /C-01/ }).check();
   await ballot.getByRole('checkbox', { name: /C-05/ }).check();
@@ -116,8 +151,8 @@ test('a homeowner whose invite matched the roster is linked, casts, and a second
   await again.getByRole('button', { name: 'Cast ballot' }).click();
   await expect(again.getByRole('heading', { name: 'Ballot received and rejected: DUPLICATE_UNIT' })).toBeVisible();
 
-  // a homeowner cannot open the desk, another unit's statement, or the delinquent list
-  expect((await page.goto(`${meetingUrl}/desk`))!.status()).toBeGreaterThanOrEqual(400);
+  // a homeowner cannot open the desk (404, D-56 — not the 500 D-45 stated), another unit's statement, or the delinquent list
+  expect((await page.goto(`${meetingUrl}/desk`))!.status()).toBe(404);
   const other = (await db.query(`SELECT u.id FROM "Unit" u JOIN "Org" o ON o.id = u."orgId" WHERE o.slug = $1 AND u."unitId" = 'B-610'`, [SLUG])).rows[0].id;
   expect((await page.goto(`/o/${SLUG}/ledger/${other}`))!.status()).toBe(404);
   await page.goto(meetingUrl);
@@ -131,6 +166,11 @@ test('the board closes; results, commitments and the published list; the homeown
   await page.goto(meetingUrl);
   await page.getByRole('button', { name: 'Close and seal the meeting' }).click();
   await expect(page.getByRole('status')).toContainText('Closed at');
+  // D-58: three ballots of 120 units do not make quorum, so R2 is NO_QUORUM and there is nothing to post
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Special assessments' })).toContainText('Result NO_QUORUM: nothing is posted.');
+  await expect(page.getByRole('button', { name: /Post the R2 assessment/ })).toHaveCount(0);
+  await expectAccessible(page, 'meeting (closed, assessment not posted)', 'Result NO_QUORUM: nothing is posted.');
   await page.goto(`${meetingUrl}/results`);
   await expect(page.getByText('Recount from the stored ballots')).toContainText('equals the stored result');
   await expect(page.getByText(/^Received 3, counted 2, rejected 1/)).toBeVisible();

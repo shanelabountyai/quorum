@@ -37,10 +37,11 @@ export type Replay = { meetingRowId: string; casts: CastResult[] };
 /**
  * Load the roster and meeting into `orgId` and cast every fixture ballot with its fixture nonce, in (cast_at,
  * ballot_id) order — the order a live meeting produces, since castAt is the instant of the cast (D-36). The
- * fixture file is in id order, which is not an arrival order.
+ * fixture file is in id order, which is not an arrival order. `beforeCasts` runs between the load and the first cast.
  */
-export async function replayFixture(orgId: string, dir = FIXTURES_DIR): Promise<Replay> {
+export async function replayFixture(orgId: string, dir = FIXTURES_DIR, beforeCasts?: (meetingRowId: string) => Promise<void>): Promise<Replay> {
   const { meetingRowId } = await loadAll(orgId, dir, REPLAY_SALT);
+  if (beforeCasts) await beforeCasts(meetingRowId); // e.g. a test declaring a special assessment before voting starts (D-58)
   const f = loadFixtures(dir);
   const casts: CastResult[] = [];
   for (const b of [...f.ballots].sort(castOrder)) {

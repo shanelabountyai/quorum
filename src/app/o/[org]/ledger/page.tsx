@@ -24,7 +24,7 @@ export default async function Ledger({ params, searchParams }: { params: Promise
     const asOf = (isCalendarDay(q.asOf) ? q.asOf : wallDay(await associationZone(tx, ctx.orgId))) as CalendarDay;
     const own = board ? null : await ownUnitRowIds(tx, ctx.orgId, ctx.userId);
     const balances = (await balancesInTx(tx, ctx.orgId, asOf)).filter((b) => own === null || own.has(b.unitRowId));
-    const runs = board ? await tx.duesRun.findMany({ where: { orgId: ctx.orgId }, orderBy: { month: 'desc' } }) : [];
+    const runs = board ? await tx.duesRun.findMany({ where: { orgId: ctx.orgId }, orderBy: [{ month: 'desc' }, { resolution: 'asc' }] }) : [];
     return { asOf, balances, runs };
   });
   const base = `/o/${ctx.slug}/ledger`;
@@ -53,10 +53,10 @@ export default async function Ledger({ params, searchParams }: { params: Promise
           <h2>Dues runs</h2>
           {v.runs.length ? (
             <table>
-              <thead><tr><th scope="col">Month</th><th scope="col" className="num">Budget</th><th scope="col" className="num">Charged to {v.runs[0]!.units} units</th><th scope="col" className="num">ROUNDING line</th></tr></thead>
+              <thead><tr><th scope="col">Month</th><th scope="col">Run</th><th scope="col" className="num">Budget</th><th scope="col" className="num">Charged to {v.runs[0]!.units} units</th><th scope="col" className="num">ROUNDING line</th></tr></thead>
               <tbody>
                 {v.runs.map((r) => (
-                  <tr key={r.id}><td>{r.month}</td><td className="num">{formatCents(r.budgetCents)}</td><td className="num">{formatCents(r.postedCents)}</td><td className="num">{formatCents(r.roundingCents)}</td></tr>
+                  <tr key={r.id}><td>{r.month}</td><td>{r.resolution ? `Special assessment ${r.resolution}` : 'Monthly dues'}</td><td className="num">{formatCents(r.budgetCents)}</td><td className="num">{formatCents(r.postedCents)}</td><td className="num">{formatCents(r.roundingCents)}</td></tr>
                 ))}
               </tbody>
             </table>
