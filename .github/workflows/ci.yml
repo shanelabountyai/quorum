@@ -79,7 +79,7 @@ jobs:
       - run: |
           createdb quorum_shadow
           set +e
-          npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema --shadow-database-url "postgresql://postgres:postgres@localhost:5432/quorum_shadow" --exit-code --script > migrate-diff.txt 2>&1
+          npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema --exit-code --script > migrate-diff.txt 2>&1
           rc=$?
           cat migrate-diff.txt
           if [ "$rc" -ne 0 ] && [ -n "${{ github.event.pull_request.number }}" ]; then
@@ -89,6 +89,7 @@ jobs:
           exit $rc
         env:
           GH_TOKEN: ${{ github.token }}
+          SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/quorum_shadow # prisma.config.ts reads it (Prisma 7 has no --shadow-database-url flag)
       - run: npx vitest run
       # Production build, served — the way it ships. login.spec.ts drives a real page.
       - run: npx playwright install --with-deps chromium
