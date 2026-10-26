@@ -35,6 +35,7 @@ BALLOT_REJECTS = (
     "PROXY_UNKNOWN", "PROXY_UNIT_MISMATCH", "PROXY_GRANTOR_NOT_OWNER", "PROXY_LATE", "PROXY_REVOKED",
     "PROXY_CHAIN", "PROXY_HOLDER_MISMATCH", "PROXY_HOLDER_NOT_MEMBER",
     "NOT_OWNER", "INELIGIBLE_DELINQUENT", "DUPLICATE_UNIT",
+    "PROXY_SUPERSEDED_BY_OWNER",   # E-9: applied to an EARLIER counted proxy ballot when the owner later casts directly
 )
 # Selection-level codes (S- rules): void one contest on one counted ballot, never the ballot.
 SELECTION_VOIDS = ("INVALID_CHOICE", "UNKNOWN_CANDIDATE", "DUPLICATE_CANDIDATE", "OVERVOTE")
@@ -162,8 +163,12 @@ def _check_rules(rules: dict) -> None:
 
 
 def ballot_reject_code(b: dict, rules: dict, unit_ids: set[str], ownerships: list[dict], proxies: dict[str, dict],
-                       delinquent: set[str], counted_units: set[str]) -> str:
-    """B-1..B-3, P-1..P-8, E-6..E-8 in precedence order. '' means the ballot counts."""
+                       delinquent: set[str], counted_units: dict[str, str]) -> str:
+    """B-1..B-3, P-1..P-8, E-6..E-9 in precedence order. '' means the ballot counts.
+
+    counted_units maps a unit with a COUNTED ballot to that ballot's via_proxy_id ('' = direct).
+    E-9 (D-10): a direct owner cast after a counted PROXY ballot counts and supersedes it; the caller
+    re-labels the earlier proxy ballot PROXY_SUPERSEDED_BY_OWNER. Any other second cast is DUPLICATE_UNIT."""
     as_of = rules["record_date"]
     if b["unit_id"] not in unit_ids:
         return "UNKNOWN_UNIT"                                         # B-1
@@ -197,6 +202,8 @@ def ballot_reject_code(b: dict, rules: dict, unit_ids: set[str], ownerships: lis
     if rules.get("delinquency_suspends_voting", False) and b["unit_id"] in delinquent:
         return "INELIGIBLE_DELINQUENT"                                # E-7
     if b["unit_id"] in counted_units:
+        if not b["via_proxy_id"] and counted_units[b["unit_id"]]:
+            return ""                                                 # E-9 owner supersedes the proxy ballot
         return "DUPLICATE_UNIT"                                       # E-8 (B-4 first valid cast wins)
     return ""
 
@@ -232,7 +239,8 @@ def evaluate_ballots(meeting: dict, units: list[dict], shares: list[dict], owner
     pmap = {p["proxy_id"]: p for p in proxies}
     delinquent = delinquent_units(ledger, sorted(unit_ids), as_of) if rules.get("delinquency_suspends_voting") else set()
     contests = {c["contest_id"]: c for c in meeting["contests"]}
-    counted_units: set[str] = set()
+    counted_units: dict[str, str] = {}
+    counted_result: dict[str, BallotResult] = {}
     out: list[BallotResult] = []
     for b in sorted(ballots, key=lambda x: (x["cast_at"], x["ballot_id"])):
         choices = b["choices"] if isinstance(b["choices"], dict) else json.loads(b["choices"])
@@ -243,7 +251,12 @@ def evaluate_ballots(meeting: dict, units: list[dict], shares: list[dict], owner
                          receipt=receipt_for(b["ballot_id"], b["nonce"], choices),
                          bps=share_bps(shares, b["unit_id"], as_of) if b["unit_id"] in unit_ids else 0)
         if not code:
-            counted_units.add(b["unit_id"])
+            prev = counted_result.get(b["unit_id"])
+            if prev is not None:                                      # E-9: the earlier proxy ballot is superseded
+                prev.status, prev.code = "REJECTED", "PROXY_SUPERSEDED_BY_OWNER"
+                prev.selections, prev.unknown_contests = {}, []
+            counted_units[b["unit_id"]] = b["via_proxy_id"]
+            counted_result[b["unit_id"]] = r
             for cid, c in contests.items():
                 r.selections[cid] = evaluate_selection(c, choices.get(cid))
             r.unknown_contests = sorted(k for k in choices if k not in contests)

@@ -1,54 +1,54 @@
 meeting AM-2026 record_date 2026-11-14
-ballots received 109 / counted 85 / rejected 24
-rejected by code: DUPLICATE_UNIT 4, EARLY 1, INELIGIBLE_DELINQUENT 5, LATE 3, NOT_OWNER 1, PROXY_CHAIN 1, PROXY_GRANTOR_NOT_OWNER 1, PROXY_HOLDER_MISMATCH 1, PROXY_HOLDER_NOT_MEMBER 1, PROXY_LATE 2, PROXY_REVOKED 1, PROXY_UNIT_MISMATCH 1, PROXY_UNKNOWN 1, UNKNOWN_UNIT 1
+ballots received 113 / counted 87 / rejected 26
+rejected by code: DUPLICATE_UNIT 5, EARLY 1, INELIGIBLE_DELINQUENT 5, LATE 3, NOT_OWNER 1, PROXY_CHAIN 1, PROXY_GRANTOR_NOT_OWNER 1, PROXY_HOLDER_MISMATCH 1, PROXY_HOLDER_NOT_MEMBER 1, PROXY_LATE 2, PROXY_REVOKED 1, PROXY_SUPERSEDED_BY_OWNER 1, PROXY_UNIT_MISMATCH 1, PROXY_UNKNOWN 1, UNKNOWN_UNIT 1
 unknown contest keys on counted ballots: 1
-quorum basis UNITS threshold 5000 bps: units 85/120 MET; weighted 7085/10000 bps MET; direct only 49/120 NOT MET (proxy units 36); binding: MET
-merkle_root b09b49d9efad29ce0eafe14b1abc3309286b5de5d9d82aef871b23a72d099b3d
+quorum basis UNITS threshold 5000 bps: units 87/120 MET; weighted 7232/10000 bps MET; direct only 51/120 NOT MET (proxy units 36); binding: MET
+merkle_root cbf6767e889c534353cdf2b7ad7b91845c98645b5207d36ab79cd54dc1665d49
 
 contest E1 "Board of Directors" ELECTION seats=3 mode=WEIGHTED
-  counted 85 / voted 80 / blank 2 / void: INVALID_CHOICE 1, OVERVOTE 1, UNKNOWN_CANDIDATE 1
-  totals UNITS (informational): C-04 65, C-01 52, C-02 46, C-05 41, C-03 32
-  totals WEIGHTED (binding): C-04 5005, C-01 4282, C-05 3812, C-02 3745, C-03 2762
-  result ELECTED: elected C-01, C-04, C-05; open seats 0; tied -
+  counted 87 / voted 81 / blank 3 / void: INVALID_CHOICE 1, OVERVOTE 1, UNKNOWN_CANDIDATE 1
+  totals UNITS (informational): C-02 57, C-04 53, C-01 45, C-03 40, C-05 39
+  totals WEIGHTED (binding): C-02 4613, C-04 4118, C-05 3584, C-01 3579, C-03 3525
+  result ELECTED: elected C-02, C-04, C-05; open seats 0; tied -
   other mode UNITS would elect C-01, C-02, C-04 (tied -); differs: True
-  commitment a0aa404cbe8c5ab5ee091bd225e273462d608d8564db5722979c1f9e98a8f77a
+  commitment 404952858cb10ebf7156b3f50cc50f74949d1355c11dcec6fe64d35efe3570fc
 
 contest E2 "Reserve Study Committee" ELECTION seats=2 mode=UNITS
-  counted 85 / voted 79 / blank 4 / void: DUPLICATE_CANDIDATE 1, OVERVOTE 1
-  totals UNITS (binding): C-11 43, C-12 38, C-13 38, C-14 32
-  totals WEIGHTED (informational): C-11 3749, C-13 3182, C-14 2852, C-12 2818
-  result TIE_UNRESOLVED: elected C-11; open seats 1; tied C-12, C-13
-  other mode WEIGHTED would elect C-11, C-13 (tied -); differs: True
-  commitment d4ac4bf8e543e28a7196df23380e33b46e0d0f27ebfa1ad006aaa3fe58d1ba2d
+  counted 87 / voted 82 / blank 3 / void: DUPLICATE_CANDIDATE 1, OVERVOTE 1
+  totals UNITS (binding): C-12 47, C-13 40, C-14 40, C-11 32
+  totals WEIGHTED (informational): C-12 3677, C-14 3396, C-13 3345, C-11 2852
+  result TIE_UNRESOLVED: elected C-12; open seats 1; tied C-13, C-14
+  other mode WEIGHTED would elect C-12, C-14 (tied -); differs: True
+  commitment d1211dfea505510c125f4fbd911912ed897eaeab7e2b5179e631a1a925286077
 
 contest R1 "Approve the 2027 operating budget ($420,000)" RESOLUTION basis=MAJORITY_OF_VOTES_CAST
-  counted 85 / voted 81 / blank 4 / void: none
-  totals units: YES 60, NO 16, ABSTAIN 9; bps: YES 5151, NO 1225, ABSTAIN 709
+  counted 87 / voted 83 / blank 4 / void: none
+  totals units: YES 56, NO 20, ABSTAIN 11; bps: YES 4726, NO 1605, ABSTAIN 901
   result PASSED under MAJORITY_OF_VOTES_CAST
   by basis: MAJORITY_OF_VOTES_CAST PASS, MAJORITY_OF_UNITS_REPRESENTED PASS, MAJORITY_OF_ALL_UNITS FAIL, TWO_THIRDS_OF_VOTES_CAST PASS, MAJORITY_OF_WEIGHTED_SHARES_CAST PASS, TWO_THIRDS_OF_ALL_WEIGHTED_SHARES FAIL
-  commitment 70e0f5f9200e5a64f2ca920f5a05df487446dcad3eb859b5b73f204b316d43ed
+  commitment f8d246b2fb08aa0fa29387194111298c4a23f114a5b74c24159d043ce3b74f32
 
 contest R2 "Special assessment of $180,000 for roof replacement" RESOLUTION basis=TWO_THIRDS_OF_ALL_WEIGHTED_SHARES
-  counted 85 / voted 79 / blank 5 / void: INVALID_CHOICE 1
-  totals units: YES 54, NO 22, ABSTAIN 8; bps: YES 4549, NO 1798, ABSTAIN 682
+  counted 87 / voted 80 / blank 6 / void: INVALID_CHOICE 1
+  totals units: YES 53, NO 18, ABSTAIN 15; bps: YES 4414, NO 1523, ABSTAIN 1239
   result FAILED under TWO_THIRDS_OF_ALL_WEIGHTED_SHARES
   by basis: MAJORITY_OF_VOTES_CAST PASS, MAJORITY_OF_UNITS_REPRESENTED PASS, MAJORITY_OF_ALL_UNITS FAIL, TWO_THIRDS_OF_VOTES_CAST PASS, MAJORITY_OF_WEIGHTED_SHARES_CAST PASS, TWO_THIRDS_OF_ALL_WEIGHTED_SHARES FAIL
-  commitment b77149dccaf31452fb89465aec806cbdd2411a85cca8409715423a1ad818dae4
+  commitment 92ef0d6d2e473a6cf148144038c3e024346305b98dea8e245436f2258cf4b80d
 
 contest R3 "Amend bylaws §9.2: minimum lease term 30 days" RESOLUTION basis=MAJORITY_OF_ALL_UNITS
-  counted 85 / voted 80 / blank 5 / void: none
-  totals units: YES 43, NO 34, ABSTAIN 8; bps: YES 3494, NO 2823, ABSTAIN 768
+  counted 87 / voted 82 / blank 5 / void: none
+  totals units: YES 40, NO 39, ABSTAIN 8; bps: YES 3409, NO 3205, ABSTAIN 618
   result FAILED under MAJORITY_OF_ALL_UNITS
-  by basis: MAJORITY_OF_VOTES_CAST PASS, MAJORITY_OF_UNITS_REPRESENTED PASS, MAJORITY_OF_ALL_UNITS FAIL, TWO_THIRDS_OF_VOTES_CAST FAIL, MAJORITY_OF_WEIGHTED_SHARES_CAST PASS, TWO_THIRDS_OF_ALL_WEIGHTED_SHARES FAIL
-  commitment 5c45c5675da3bed54bc1919db37e6f7f22355709b99358f0326e982ee6dc0022
+  by basis: MAJORITY_OF_VOTES_CAST PASS, MAJORITY_OF_UNITS_REPRESENTED FAIL, MAJORITY_OF_ALL_UNITS FAIL, TWO_THIRDS_OF_VOTES_CAST FAIL, MAJORITY_OF_WEIGHTED_SHARES_CAST PASS, TWO_THIRDS_OF_ALL_WEIGHTED_SHARES FAIL
+  commitment d8ad22f25ea94118c854a0b938e83fb7fdbe20e230885e4aac2dd1079197a43a
 
 contest R4 "Adopt the two-pet limit policy" RESOLUTION basis=MAJORITY_OF_UNITS_REPRESENTED
-  counted 85 / voted 81 / blank 4 / void: none
-  totals units: YES 39, NO 28, ABSTAIN 18; bps: YES 3289, NO 2269, ABSTAIN 1527
+  counted 87 / voted 81 / blank 6 / void: none
+  totals units: YES 33, NO 32, ABSTAIN 22; bps: YES 2652, NO 2697, ABSTAIN 1883
   result FAILED under MAJORITY_OF_UNITS_REPRESENTED
-  by basis: MAJORITY_OF_VOTES_CAST PASS, MAJORITY_OF_UNITS_REPRESENTED FAIL, MAJORITY_OF_ALL_UNITS FAIL, TWO_THIRDS_OF_VOTES_CAST FAIL, MAJORITY_OF_WEIGHTED_SHARES_CAST PASS, TWO_THIRDS_OF_ALL_WEIGHTED_SHARES FAIL
-  commitment 069d2b071b2512422f44a09b42a587f2b12a1de1f60059e8482ebea752a7545e
+  by basis: MAJORITY_OF_VOTES_CAST PASS, MAJORITY_OF_UNITS_REPRESENTED FAIL, MAJORITY_OF_ALL_UNITS FAIL, TWO_THIRDS_OF_VOTES_CAST FAIL, MAJORITY_OF_WEIGHTED_SHARES_CAST FAIL, TWO_THIRDS_OF_ALL_WEIGHTED_SHARES FAIL
+  commitment 603919525c475a9a8c1fa68c369552bfce99acdb36bc5ce0a496c8860f38d994
 
-meeting_commitment 6da824b74d535ae24dc0e4961a8f87d1270ea102867b0f7fd5ec660b90af7602
+meeting_commitment a703d58b3c148c601c9eed219095cb0e4d3894c1d1b86f774d8ac077d6c5037a
 order independence: 5 shuffles, same totals and meeting_commitment
 wrote expected_ballots.csv, expected_totals.csv, expected_results.csv, expected_quorum.csv, published_ballots.csv

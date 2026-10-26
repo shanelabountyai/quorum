@@ -1,7 +1,7 @@
 """Quorum — kickoff answer key (test oracle, never product code).
 
-Re-derives every golden case in docs/domain-brief.md §9 (GT-01..GT-20, tally) and §10
-(GQ-01..GQ-10, quorum and eligibility) from tools/tallylib.py and checks each against the
+Re-derives every golden case in docs/domain-brief.md §9 (GT-01..GT-21, tally) and §10
+(GQ-01..GQ-11, quorum and eligibility) from tools/tallylib.py and checks each against the
 value worked by hand in the brief. Prints one line per case and ends with OK, or exits 1
 naming the first mismatch.
 
@@ -65,9 +65,10 @@ def contest(res: dict, cid: str) -> dict:
     return next(c for c in res["contests"] if c["contest_id"] == cid)
 
 
-def reject(b: dict, proxies: list[dict], counted: set[str] | None = None, delinquent: set[str] | None = None) -> str:
+def reject(b: dict, proxies: list[dict], counted: dict[str, str] | None = None, delinquent: set[str] | None = None) -> str:
+    """counted: unit -> via_proxy_id of its COUNTED ballot ('' = direct)."""
     return T.ballot_reject_code(b, RULES, {"U1", "U2", "U3", "U4"}, OWNERSHIPS, {p["proxy_id"]: p for p in proxies},
-                                delinquent or set(), counted or set())
+                                delinquent or set(), counted or {})
 
 
 def main() -> int:
@@ -141,6 +142,22 @@ def main() -> int:
         (T.contest_commitment(root, "R", tot) == contest(res, "R")["commitment"], T.contest_commitment(root, "R", tot2) != contest(res, "R")["commitment"],
          T.meeting_commitment({"R": "r", "E": "e"}) == T.sha256_hex("e|r")), (True, True, True))
 
+    # GT-21: owner override (E-9). Proxy P1 (U1 o1 -> o2) casts YES+[X] at 10:00; o1 casts NO+[Y] directly at 12:00;
+    # o2 casts again by proxy at 13:00; o1 casts again at 14:00. Final: only the 12:00 direct cast counts.
+    P1 = {"proxy_id": "P1", "grantor_unit": "U1", "grantor_owner": "o1", "holder_owner": "o2", "received_at": "2026-11-05T09:00:00", "revoked_at": ""}
+    B21 = [ballot("p1", "U1", "o2", "2026-11-14T10:00:00", {"E": ["X"], "R": "YES"}, via="P1"),
+           ballot("d1", "U1", "o1", "2026-11-14T12:00:00", {"E": ["Y"], "R": "NO"}),
+           ballot("p2", "U1", "o2", "2026-11-14T13:00:00", {"E": ["X"], "R": "YES"}, via="P1"),
+           ballot("d2", "U1", "o1", "2026-11-14T14:00:00", {"E": ["Z"], "R": "YES"})]
+    res21 = T.tally(meeting(), UNITS, SHARES_FLAT, OWNERSHIPS, LEDGER, [P1], B21)
+    res21r = T.tally(meeting(), UNITS, SHARES_FLAT, OWNERSHIPS, LEDGER, [P1], list(reversed(B21)))
+    st21 = {r.ballot_id: (r.status, r.code) for r in res21["ballot_results"]}
+    add("GT-21", "owner override: a direct owner cast supersedes the counted proxy ballot; later proxy and direct casts are duplicates; order-independent",
+        (st21, res21["quorum"]["units_represented"], contest(res21, "R")["totals"]["units"], contest(res21, "E")["totals"]["WEIGHTED"],
+         res21r["meeting_commitment"] == res21["meeting_commitment"], len([r for r in res21["ballot_results"] if r.status == "REJECTED"])),
+        ({"p1": ("REJECTED", "PROXY_SUPERSEDED_BY_OWNER"), "d1": ("COUNTED", ""), "p2": ("REJECTED", "DUPLICATE_UNIT"), "d2": ("REJECTED", "DUPLICATE_UNIT")},
+         1, {"YES": 0, "NO": 1, "ABSTAIN": 0}, {"X": 0, "Y": 1000, "Z": 0}, True, 3))
+
     # ---- GQ: quorum and eligibility
     add("GQ-01", "owners as of: to_date is exclusive (sold 2026-06-01)",
         (T.owners_of_unit(OWNERSHIPS, "U4", "2026-05-31"), T.owners_of_unit(OWNERSHIPS, "U4", "2026-06-01"), T.is_member(OWNERSHIPS, "o4old", "2026-11-14")),
@@ -165,8 +182,8 @@ def main() -> int:
     late_dup = ballot("x", "U1", "o1", "2026-11-14T19:00:00", {})
     del_dup = ballot("y", "U3", "o3", "2026-11-14T10:00:00", {})
     add("GQ-08", "precedence: LATE before DUPLICATE_UNIT; INELIGIBLE_DELINQUENT before DUPLICATE_UNIT; at the close instant is LATE",
-        (reject(late_dup, [], counted={"U1"}), reject(del_dup, [], counted={"U3"}, delinquent={"U3"}),
-         reject(ballot("z", "U1", "o1", "2026-11-14T18:59:59", {}), []), reject(ballot("w", "U1", "o1", "2026-11-14T10:00:00", {}), [], counted={"U1"})),
+        (reject(late_dup, [], counted={"U1": ""}), reject(del_dup, [], counted={"U3": ""}, delinquent={"U3"}),
+         reject(ballot("z", "U1", "o1", "2026-11-14T18:59:59", {}), []), reject(ballot("w", "U1", "o1", "2026-11-14T10:00:00", {}), [], counted={"U1": ""})),
         ("LATE", "INELIGIBLE_DELINQUENT", "", "DUPLICATE_UNIT"))
     P1 = {"proxy_id": "P1", "grantor_unit": "U1", "grantor_owner": "o1", "holder_owner": "o2", "received_at": "2026-11-05T09:00:00", "revoked_at": ""}
     P2 = {"proxy_id": "P2", "grantor_unit": "U2", "grantor_owner": "o2", "holder_owner": "o3", "received_at": "2026-11-06T09:00:00", "revoked_at": ""}
@@ -185,6 +202,13 @@ def main() -> int:
          reject(ballot("c", "U1", "o2", "2026-11-12T11:00:00", {}, via="P5"), [P5]), reject(ballot("d", "U1", "o4old", at, {}, via="P6"), [P6]),
          reject(ballot("e", "U4", "o1", at, {}, via="P7"), [P7]), reject(ballot("f", "U4", "o4old", at, {}), [])),
         ("PROXY_LATE", "PROXY_LATE", "PROXY_REVOKED", "PROXY_HOLDER_NOT_MEMBER", "PROXY_GRANTOR_NOT_OWNER", "NOT_OWNER"))
+
+    add("GQ-11", "E-8/E-9 at the reject-code level: direct after counted proxy counts; proxy after proxy, proxy after direct, and direct after direct are DUPLICATE_UNIT",
+        (reject(ballot("a", "U1", "o1", at, {}), [P1], counted={"U1": "P1"}),
+         reject(ballot("b", "U1", "o2", at, {}, via="P1"), [P1], counted={"U1": "P1"}),
+         reject(ballot("c", "U1", "o2", at, {}, via="P1"), [P1], counted={"U1": ""}),
+         reject(ballot("d", "U1", "o1", at, {}), [P1], counted={"U1": ""})),
+        ("", "DUPLICATE_UNIT", "DUPLICATE_UNIT", "DUPLICATE_UNIT"))
 
     bad = 0
     for gid, desc, got, exp in cases:

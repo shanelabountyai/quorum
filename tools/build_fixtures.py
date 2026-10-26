@@ -280,7 +280,7 @@ class Gen:
         r = self.rng
         D = "2026-11-14"
         special = {"A-301", "B-610", "A-407", "A-204", "B-108", "A-508", "B-307", "A-110", "B-509",
-                   "A-205", "B-305", "A-402", "B-110",          # co-owner duplicate cases
+                   "A-205", "B-305", "A-402", "B-110", "B-409", "A-308",   # duplicate / override cases
                    "A-109", "B-207", "A-310",                   # late
                    "B-410",                                     # early then valid
                    "A-101", "A-102", "A-103", "A-104", "A-105", "A-106", "A-107", "B-101", "B-102", "B-103",  # proxy defects
@@ -317,10 +317,23 @@ class Gen:
         a, b = self.unit_owner["B-305"]
         self._ballot("B-305", a, f"{D}T10:30:00", trap="CO_OWNER_SAME_INSTANT")    # resolved after ids are assigned
         self._ballot("B-305", b, f"{D}T10:30:00", trap="CO_OWNER_SAME_INSTANT")
+        # E-9 (D-10 owner override): the proxy ballot is counted at 11:00, then a co-owner casts directly at 18:00;
+        # the owner's cast counts and the proxy ballot is re-labelled PROXY_SUPERSEDED_BY_OWNER
         a, b = self.unit_owner["A-402"]
         pid = self._proxy("A-402", a, holders_pool[0], "2026-11-05T12:00:00")
-        self._ballot("A-402", holders_pool[0], f"{D}T11:00:00", via=pid, trap="PROXY_THEN_IN_PERSON")
-        self._ballot("A-402", b, f"{D}T18:00:00", expect="REJECTED", code="DUPLICATE_UNIT", defect="D-DUP-AFTER-PROXY", trap="PROXY_THEN_IN_PERSON")
+        self._ballot("A-402", holders_pool[0], f"{D}T11:00:00", via=pid, expect="REJECTED", code="PROXY_SUPERSEDED_BY_OWNER", defect="D-PROXY-SUPERSEDED", trap="OWNER_AFTER_PROXY")
+        self._ballot("A-402", b, f"{D}T18:00:00", trap="OWNER_AFTER_PROXY")
+        # proxy then a second proxy for the same unit: still DUPLICATE_UNIT (only the owner's own cast supersedes)
+        o = self.unit_owner["B-409"][0]
+        p1 = self._proxy("B-409", o, holders_pool[12], "2026-11-04T09:00:00")
+        p2 = self._proxy("B-409", o, holders_pool[13], "2026-11-09T09:00:00")
+        self._ballot("B-409", holders_pool[12], f"{D}T17:35:30", via=p1, trap="PROXY_THEN_PROXY")
+        self._ballot("B-409", holders_pool[13], f"{D}T18:05:30", via=p2, expect="REJECTED", code="DUPLICATE_UNIT", defect="D-DUP-PROXY-AFTER-PROXY", trap="PROXY_THEN_PROXY")
+        # owner direct first, proxy holder later: DUPLICATE_UNIT (a proxy never supersedes the owner)
+        o = self.unit_owner["A-308"][0]
+        self._ballot("A-308", o, f"{D}T10:05:00", trap="PROXY_AFTER_OWNER")
+        pid = self._proxy("A-308", o, holders_pool[14], "2026-11-06T09:00:00")
+        self._ballot("A-308", holders_pool[14], f"{D}T18:06:00", via=pid, expect="REJECTED", code="DUPLICATE_UNIT", defect="D-DUP-PROXY-AFTER-OWNER", trap="PROXY_AFTER_OWNER")
         o = self.unit_owner["B-110"][0]
         self._ballot("B-110", o, f"{D}T12:15:00")
         self._ballot("B-110", o, f"{D}T12:16:30", expect="REJECTED", code="DUPLICATE_UNIT", defect="D-DUP-RESUBMIT")
@@ -425,6 +438,15 @@ class Gen:
                 return True
         return False
 
+    def _add_election(self, meeting: dict, cid: str, to: str) -> bool:
+        """Append `to` to one single-selection (undervote) ballot that does not already name it."""
+        for b in self._voted(meeting, cid):
+            v = b["choices"][cid]
+            if len(v) == 1 and to not in v:
+                b["choices"][cid] = v + [to]
+                return True
+        return False
+
     def _flip_res(self, meeting: dict, cid: str, frm: str, to: str, large: bool | None = None) -> bool:
         for b in self._voted(meeting, cid):
             bps = T.share_bps(self.shares, b["unit_id"], RECORD_DATE)
@@ -465,6 +487,10 @@ class Gen:
             (a, va), (b, vb), (c, vc), (d, vd) = ranked
             if va > vb == vc > vd:
                 break
+            if (vb - vc) % 2 == 1:
+                # a swap moves the gap by 2; an odd gap needs one undervote ballot to add the trailing candidate
+                assert self._add_election(meeting, "E2", c if vb > vc else b), "E2 parity nudge exhausted"
+                continue
             if vb > vc:
                 assert self._swap_election(meeting, "E2", b, c)
             elif vc > vb:

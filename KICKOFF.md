@@ -83,5 +83,5 @@ limits; branch + PR, never merge.
 - Review and merge the two PRs (quorum `kickoff`; saas-foundation CLONES row).
 - Build-log card #21: name **Quorum**, PRD and repo links, status `in progress`, chips per `docs/portfolio-overlap.md` "Suggested card chips".
 - Neon and Vercel only if this is ever deployed (not planned; synthetic data).
-- Decide O-1..O-9 when they come up; defaults are in force.
+- Decide O-2..O-9 when they come up; defaults are in force (O-1 was decided 2026-10-25: D-26).
 - Re-run `reuse-scan.py` against `docs/phase-1-tasks.md` the next time the repo is open on the Mac and record the result.

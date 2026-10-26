@@ -29,7 +29,7 @@ Quorum treats the meeting as a tally with a rule for every one of those question
 4. **The application cannot link a ballot to a voter after close.** The link lives in one sealed table; a trigger revokes the application role's read at close; a tamper test proves the read fails and the recount still matches.
 5. **Quorum, weights, thresholds, abstentions and ties follow the rules JSON, and the eval shows what would have happened under the other rules** (both election modes, all six resolution bases, direct-only quorum) so a board can see which clause decided the outcome.
 6. **Dues are integer cents on an append-only ledger; violations are a state machine with an event per transition.** Small, but real.
-7. **(Builder goal)** Say what the numbers mean: the fixture proves agreement with the spec on 109 ballots with 24 injected rejects and 14 named traps; it does not prove the spec matches any bylaws.
+7. **(Builder goal)** Say what the numbers mean: the fixture proves agreement with the spec on 113 ballots with 26 injected rejects and 16 named traps; it does not prove the spec matches any bylaws.
 
 ## Non-Goals
 
@@ -58,13 +58,13 @@ Quorum treats the meeting as a tally with a rule for every one of those question
 **P0-2: Tally engine, pure** *(core learning artifact #1)*
 - [ ] `src/tally/`: evaluate ballots (B-1..E-8), selections (S-1..S-5), quorum (Q-1..Q-4), resolutions (T-1..T-6), elections (T-7..T-11), receipts and commitments (C-1..C-5); no forbidden import (`tally:lint`)
 - [ ] Rules JSON validated against a closed schema; any other `proxy_max_depth`, unknown basis, unknown mode, or shares not summing to `total_share_bps` → `RULES_INVALID`
-- [ ] GT-01..GT-20 and GQ-01..GQ-10 pass in TypeScript with the exact values in the brief
+- [ ] GT-01..GT-21 and GQ-01..GQ-11 pass in TypeScript with the exact values in the brief
 - [ ] Order independence: a vitest shuffles `ballots.csv` 20 times and asserts identical totals and meeting commitment
 
 **P0-3: Eligibility, proxies, duplicates** *(core learning artifact #2)*
 - [ ] Delinquency from the ledger as of the record date (E-4, E-5), switched by `rules.delinquency_suspends_voting`; the eval prints how many ballots the flag rejected
 - [ ] Proxy rules P-1..P-8 including `PROXY_CHAIN` vs `PROXY_HOLDER_MISMATCH` and `PROXY_LATE` for a proxy received after the ballot it supports
-- [ ] One unit, one ballot: first valid cast wins, equal instant → lower ballot id; both co-owners delinquent → both `INELIGIBLE_DELINQUENT`, not `DUPLICATE_UNIT`
+- [ ] One unit, one ballot: first valid cast wins, equal instant → lower ballot id; an owner's direct cast supersedes a counted proxy ballot (`PROXY_SUPERSEDED_BY_OWNER`, D-26) while proxy-after-proxy and proxy-after-owner stay `DUPLICATE_UNIT`; both co-owners delinquent → both `INELIGIBLE_DELINQUENT`, not `DUPLICATE_UNIT`
 
 **P0-4: Quorum, thresholds, ties** *(core learning artifact #3)*
 - [ ] Quorum in both modes plus direct-only, binding basis from rules; `NO_QUORUM` labels every contest while totals are still computed
@@ -100,12 +100,12 @@ Quorum treats the meeting as a tally with a rule for every one of those question
 
 ## Nice-to-Have (P1)
 
-Directed proxies (holder must cast the grantor's instructions) · proxy cap per holder (O-2) · `IN_PERSON_SUPERSEDES` duplicate rule (O-1) · delinquency grace days (O-3) · cumulative voting (O-4) · runoff contest generated from a `TIE_UNRESOLVED` · year-end owner statement · import of a roster CSV with the column-map discipline from Housefile · a second meeting fixture that fails quorum.
+Directed proxies (holder must cast the grantor's instructions) · proxy cap per holder (O-2) · delinquency grace days (O-3) · cumulative voting (O-4) · runoff contest generated from a `TIE_UNRESOLVED` · year-end owner statement · import of a roster CSV with the column-map discipline from Housefile · a second meeting fixture that fails quorum.
 
 ## Success Metrics (seeded)
 
-- `tally:eval` reproduces `tools/reference_tally.py` field for field on the frozen fixtures: 109 / 85 / 24; quorum 85/120 MET, direct-only 49/120 NOT MET; E1 ELECTED C-01, C-04, C-05 (UNITS would elect C-01, C-02, C-04); E2 TIE_UNRESOLVED C-12/C-13; R1 PASSED; R2, R3, R4 FAILED with their by-basis rows; meeting commitment `6da824b7…7602`
-- GT-01..GT-20, GQ-01..GQ-10 pass in TypeScript
+- `tally:eval` reproduces `tools/reference_tally.py` field for field on the frozen fixtures: 113 / 87 / 26; quorum 87/120 MET, direct-only 51/120 NOT MET; E1 ELECTED C-02, C-04, C-05 (UNITS would elect C-01, C-02, C-04); E2 TIE_UNRESOLVED C-13/C-14; R1 PASSED; R2, R3, R4 FAILED with their by-basis rows; meeting commitment `a703d58b…037a`
+- GT-01..GT-21, GQ-01..GQ-11 pass in TypeScript
 - Shuffle test: 20 orders, one commitment
 - Tamper tests pass; the Phase 2 recount equals the Phase 1 commitments
 - Zero floating-point money or shares under `src/` (lint); zero machine tiebreaks (lint greps `localeCompare`/`sort` inside `seats`)
@@ -130,8 +130,8 @@ Phase 2 and 3 task lists are written at the gates.
 
 ## Open Questions (defaults in force; see `docs/decisions.md` O-items)
 
-O-1 in-person supersedes proxy (default: no) · O-2 proxy cap (none) · O-3 delinquency grace (none) · O-4 cumulative voting (not offered) · O-5 tie procedure (runoff, never by machine) · O-6 publish rejected ballots' choices (yes) · O-7 one ballot per unit for multi-unit owners (yes) · O-8 who sees the delinquent list (board/manager) · O-9 real bylaws (none)
+O-2 proxy cap (none) · O-3 delinquency grace (none) · O-4 cumulative voting (not offered) · O-5 tie procedure (runoff, never by machine) · O-6 publish rejected ballots' choices (yes) · O-7 one ballot per unit for multi-unit owners (yes) · O-8 who sees the delinquent list (board/manager) · O-9 real bylaws (none)
 
 ## Build Notes for Claude Code
 
-CLAUDE.md: house conventions + **the engine is pure and order-independent**, **one unit, one ballot, first valid cast wins**, **ties are never broken by the machine**, **the app cannot read the voter link after close**, **thresholds are data**, **fixtures are frozen**, **integers for money and shares**, **never edit an expected value to pass a test**, **say what the receipt does not prove**. Build order in `docs/phase-1-tasks.md`.
+CLAUDE.md: house conventions + **the engine is pure and order-independent**, **one unit, one ballot, first valid cast wins except the owner's own direct cast over a proxy ballot**, **ties are never broken by the machine**, **the app cannot read the voter link after close**, **thresholds are data**, **fixtures are frozen**, **integers for money and shares**, **never edit an expected value to pass a test**, **say what the receipt does not prove**. Build order in `docs/phase-1-tasks.md`.
