@@ -66,6 +66,15 @@ test('the board creates the meeting and records its proxies', async ({ page }) =
   await expect(page.getByRole('heading', { name: 'Proxies (49)' })).toBeVisible();
   await expect(page.getByText('Delinquent (balance above zero, E-4/E-5): A-110, A-204, A-508, B-108, B-509')).toBeVisible();
   await expectAccessible(page, 'meeting (open)', 'Quorum now');
+  // D-56: R2 (the roof) declared a special assessment of $180,000.00 before the first ballot
+  const assess = page.getByRole('region', { name: 'Special assessments' });
+  await assess.getByLabel('Resolution').selectOption('R2');
+  await assess.getByLabel('Amount in dollars').fill('180,000.00');
+  await assess.getByRole('button', { name: 'Declare special assessment' }).click();
+  await expect(assess.getByRole('status')).toContainText('R2 declared a special assessment of 18000000 cents');
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Special assessments' })).toContainText('AM-E2E/R2 Special assessment of $180,000 for roof replacement: $180000.00 (18000000 cents). Voting decides it');
+  await expectAccessible(page, 'meeting (assessment declared)', 'Voting decides it');
 });
 
 test('the desk casts for an owner; the receipt is shown once with its limit', async ({ page }) => {
@@ -84,7 +93,8 @@ test('the desk casts for an owner; the receipt is shown once with its limit', as
 
   // D-55: one paper proxy from O-001 (the homeowner below revokes it from their own page) and a desk revocation
   await page.goto(meetingUrl);
-  const pick = async (label: string, text: string) => page.getByLabel(label, { exact: true }).selectOption({ label: (await page.getByLabel(label, { exact: true }).locator('option', { hasText: text }).first().textContent())! });
+  const intake = page.locator('form', { has: page.getByRole('button', { name: 'Record proxy' }) });
+  const pick = async (label: string, text: string) => intake.getByLabel(label).selectOption({ label: (await intake.getByLabel(label).locator('option', { hasText: text }).first().textContent())! });
   await pick('Unit', 'A-101');
   await pick('Grantor', 'O-001 ');
   await pick('Holder', 'O-002 ');
@@ -156,6 +166,11 @@ test('the board closes; results, commitments and the published list; the homeown
   await page.goto(meetingUrl);
   await page.getByRole('button', { name: 'Close and seal the meeting' }).click();
   await expect(page.getByRole('status')).toContainText('Closed at');
+  // D-56: three ballots of 120 units do not make quorum, so R2 is NO_QUORUM and there is nothing to post
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Special assessments' })).toContainText('Result NO_QUORUM: nothing is posted.');
+  await expect(page.getByRole('button', { name: /Post the R2 assessment/ })).toHaveCount(0);
+  await expectAccessible(page, 'meeting (closed, assessment not posted)', 'Result NO_QUORUM: nothing is posted.');
   await page.goto(`${meetingUrl}/results`);
   await expect(page.getByText('Recount from the stored ballots')).toContainText('equals the stored result');
   await expect(page.getByText(/^Received 3, counted 2, rejected 1/)).toBeVisible();

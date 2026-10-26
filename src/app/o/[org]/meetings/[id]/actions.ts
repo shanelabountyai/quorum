@@ -1,10 +1,11 @@
 'use server';
 import { z } from 'zod';
 import { assertFresh } from '@/core/auth/session';
-import { orgAction, ref } from '@/core/authz/action';
+import { notRef, orgAction, ref } from '@/core/authz/action';
 import { audit } from '@/core/audit';
 import { closeMeetingNow, importProxies, intakeProxy, queueMeetingNotice } from '@/meetings/admin';
 import { refusing } from '@/meetings/refuse';
+import { declareAssessment, describeAssessment, postAssessment } from '@/ledger/assessment';
 
 // Task 3.1: the board's meeting actions. Every id is ref('<model>') so the INV harness scopes it; a meeting, unit or
 // owner of another association is notFound, exactly like one that does not exist (INV-04).
@@ -36,4 +37,16 @@ export const closeMeetingAction = orgAction('org.update', z.object({ meetingId: 
 export const queueNoticeAction = orgAction('org.update', z.object({ meetingId: ref('meeting') }), async (ctx, { meetingId }) => {
   const r = await refusing(() => queueMeetingNotice(ctx, meetingId));
   return { notice: r.queued ? `${r.queued} notices queued (not sent: notices stay in the outbox).` : `Already queued: ${r.already} notices. Nothing new was queued.` };
+});
+
+// D-56: declare a resolution a special assessment (open meeting, before the first ballot), and post a PASSED one once.
+// contestId is a contest id inside the meeting's definition ("R2"), not a row id, hence notRef.
+export const declareAssessmentAction = orgAction('org.update', z.object({ meetingId: ref('meeting'), contestId: notRef(z.string().max(40)), amount: z.string().max(20) }), async (ctx, { meetingId, contestId, amount }) => {
+  const r = await refusing(() => declareAssessment(ctx, { meetingRowId: meetingId, contestId, amount }));
+  return { notice: `${r.contestId} declared a special assessment of ${r.amountCents} cents. It posts after close only if it passes.` };
+});
+
+export const postAssessmentAction = orgAction('org.update', z.object({ meetingId: ref('meeting'), contestId: notRef(z.string().max(40)) }), async (ctx, { meetingId, contestId }) => {
+  const r = await refusing(() => postAssessment(ctx, { meetingRowId: meetingId, contestId }));
+  return { notice: `Posted ${r.resolution} on ${r.chargedOn}: ${describeAssessment({ contestId, amountCents: r.allocation.budgetCents, postedCents: r.allocation.postedCents, roundingCents: r.allocation.roundingCents, units: r.allocation.charges.length })}.` };
 });

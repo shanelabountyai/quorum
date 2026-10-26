@@ -14,13 +14,41 @@ import { calendarDay, type CalendarDay } from '@/tally/time';
 import { allocateDues, firstOfMonth, SharesDoNotSum, type DuesAllocation } from './dues';
 import { assertCents, formatCents, parseDollars } from './money';
 
-type Who = { orgId: string; userId: string | null };
+export type Who = { orgId: string; userId: string | null };
 
-const isUnique = (e: unknown) => (e as { code?: string })?.code === 'P2002';
+export const isUnique = (e: unknown) => (e as { code?: string })?.code === 'P2002';
 
 export type DuesRunResult = { runId: string; month: string; chargedOn: CalendarDay; allocation: DuesAllocation };
 
-/** One month's dues for every unit, once (DuesRun is unique per org and month; a second run is refused). */
+/** What a run posts: the monthly dues, or (D-56) one special assessment. */
+export type RunSpec = { month: string; chargedOn: CalendarDay; budgetCents: number; entryId: string; memo: string; resolution?: string; assessmentId?: string; action: string };
+
+/**
+ * The one writer of a run (D-21): allocate by share as of the charge day, then one DuesRun row and one CHARGE per
+ * unit in the same transaction, with the audit row. The caller has checked the archive and its own once-rule.
+ */
+export async function postRunInTx(tx: Tx, who: Who, spec: RunSpec): Promise<DuesRunResult> {
+  const roster = await readRoster(tx, who.orgId);
+  if (!roster.units.length) throw new Refused('There are no units on the roster yet.');
+  let allocation: DuesAllocation;
+  try {
+    allocation = allocateDues(spec.budgetCents, roster.units, roster.shares, spec.chargedOn);
+  } catch (e) {
+    if (e instanceof SharesDoNotSum) throw new Refused(e.message);
+    throw e;
+  }
+  const unitRows = new Map((await tx.unit.findMany({ where: { orgId: who.orgId }, select: { id: true, unitId: true } })).map((u) => [u.unitId, u.id]));
+  const run = await tx.duesRun.create({
+    data: { orgId: who.orgId, month: spec.month, chargedOn: spec.chargedOn, budgetCents: spec.budgetCents, totalBps: allocation.totalBps, postedCents: allocation.postedCents, roundingCents: allocation.roundingCents, units: allocation.charges.length, postedById: who.userId, resolution: spec.resolution ?? '', assessmentId: spec.assessmentId ?? null },
+  });
+  await tx.ledgerEntry.createMany({
+    data: allocation.charges.map((c) => ({ unitId: unitRows.get(c.unit_id)!, entryId: spec.entryId, kind: 'CHARGE' as const, amountCents: c.cents, date: spec.chargedOn, memo: spec.memo, runId: run.id })),
+  });
+  await audit(who, spec.action, { targetType: 'duesRun', targetId: run.id, data: { month: spec.month, ...(spec.resolution ? { resolution: spec.resolution } : {}), budgetCents: spec.budgetCents, postedCents: allocation.postedCents, roundingCents: allocation.roundingCents } }, tx);
+  return { runId: run.id, month: spec.month, chargedOn: spec.chargedOn, allocation };
+}
+
+/** One month's dues for every unit, once (DuesRun is unique per org, month and resolution ''; a second run is refused). */
 export const runDues = (who: Who, month: string, budgetCents: number): Promise<DuesRunResult> =>
   asApp(async (tx) => {
     await assertNotArchived(tx, who.orgId);
@@ -32,24 +60,9 @@ export const runDues = (who: Who, month: string, budgetCents: number): Promise<D
     }
     assertCents(budgetCents);
     if (budgetCents <= 0) throw new Refused('The monthly budget must be more than zero.');
-    if (await tx.duesRun.findUnique({ where: { orgId_month: { orgId: who.orgId, month } } })) throw new Refused(`Dues for ${month} were already posted. A month posts once; correct a unit with a credit.`);
-    const roster = await readRoster(tx, who.orgId);
-    if (!roster.units.length) throw new Refused('There are no units on the roster yet.');
-    let allocation: DuesAllocation;
+    if (await tx.duesRun.findUnique({ where: { orgId_month_resolution: { orgId: who.orgId, month, resolution: '' } } })) throw new Refused(`Dues for ${month} were already posted. A month posts once; correct a unit with a credit.`);
     try {
-      allocation = allocateDues(budgetCents, roster.units, roster.shares, chargedOn);
-    } catch (e) {
-      if (e instanceof SharesDoNotSum) throw new Refused(e.message);
-      throw e;
-    }
-    const unitRows = new Map((await tx.unit.findMany({ where: { orgId: who.orgId }, select: { id: true, unitId: true } })).map((u) => [u.unitId, u.id]));
-    try {
-      const run = await tx.duesRun.create({ data: { orgId: who.orgId, month, chargedOn, budgetCents, totalBps: allocation.totalBps, postedCents: allocation.postedCents, roundingCents: allocation.roundingCents, units: allocation.charges.length, postedById: who.userId } });
-      await tx.ledgerEntry.createMany({
-        data: allocation.charges.map((c) => ({ unitId: unitRows.get(c.unit_id)!, entryId: `D-${month}`, kind: 'CHARGE' as const, amountCents: c.cents, date: chargedOn, memo: `${month} dues`, runId: run.id })),
-      });
-      await audit(who, 'dues.run', { targetType: 'duesRun', targetId: run.id, data: { month, budgetCents, postedCents: allocation.postedCents, roundingCents: allocation.roundingCents } }, tx);
-      return { runId: run.id, month, chargedOn, allocation };
+      return await postRunInTx(tx, who, { month, chargedOn, budgetCents, entryId: `D-${month}`, memo: `${month} dues`, action: 'dues.run' });
     } catch (e) {
       if (isUnique(e)) throw new Refused(`Dues for ${month} were already posted.`);
       throw e;

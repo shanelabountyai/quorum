@@ -125,25 +125,46 @@ model LedgerEntry {
   @@index([unitId, date])
 }
 
-/// D-21: one monthly dues run per association per month. Each unit is charged budget × bps / total (integer
+/// D-21: one monthly dues run per association per month (and, D-56, one run per posted special assessment). Each unit is charged budget × bps / total (integer
 /// division); the remainder is this row's roundingCents — the association's ROUNDING memo line — so
 /// postedCents + roundingCents = budgetCents exactly. Append-only.
 model DuesRun {
-  id            String        @id @default(uuid()) @db.Uuid
-  orgId         String        @db.Uuid
-  org           Org           @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  month         String        @db.Char(7) // "YYYY-MM"
-  chargedOn     String        @db.Char(10) // the day the charges are dated (the 1st of the month)
+  id            String             @id @default(uuid()) @db.Uuid
+  orgId         String             @db.Uuid
+  org           Org                @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  month         String             @db.Char(7) // "YYYY-MM"
+  chargedOn     String             @db.Char(10) // the day the charges are dated (the 1st of the month)
   budgetCents   Int
   totalBps      Int
   postedCents   Int
   roundingCents Int
   units         Int
-  postedById    String?       @db.Uuid
-  createdAt     DateTime      @default(now()) @db.Timestamptz(6)
+  postedById    String?            @db.Uuid
+  createdAt     DateTime           @default(now()) @db.Timestamptz(6)
+  /// D-56: "" for the monthly dues run; "<meeting id>/<contest id>" (e.g. "AM-2026/R2") for a special-assessment run
+  resolution    String             @default("")
+  /// D-56: the declaration this run posted; unique, so an assessment posts once
+  assessmentId  String?            @unique @db.Uuid
+  assessment    SpecialAssessment? @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
   entries       LedgerEntry[]
 
-  @@unique([orgId, month])
+  @@unique([orgId, month, resolution])
+}
+
+/// D-56 (owner decision, 2026-10-26): a resolution declared a special assessment of `amountCents`, by the board,
+/// while the meeting is open and before its first ballot (the owners vote on the amount as declared). Posted at most
+/// once, as a DuesRun, after the meeting closes with the resolution PASSED. Append-only.
+model SpecialAssessment {
+  id           String   @id @default(uuid()) @db.Uuid
+  meetingId    String   @db.Uuid
+  meeting      Meeting  @relation(fields: [meetingId], references: [id], onDelete: Restrict)
+  contestId    String // a RESOLUTION contest of the meeting's definition (trigger)
+  amountCents  Int // CHECK > 0
+  declaredById String?  @db.Uuid
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  run          DuesRun?
+
+  @@unique([meetingId, contestId])
 }
 
 /// D-22: the states of a violation, in the order the machine reaches them. Mirrors src/violations/transitions.json.
@@ -193,25 +214,26 @@ model ViolationEvent {
 
 /// The meeting: its definition (rules + contests, the engine's schema), its salt, and — after close — its result.
 model Meeting {
-  id             String            @id @default(uuid()) @db.Uuid
-  orgId          String            @db.Uuid
-  org            Org               @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  id             String              @id @default(uuid()) @db.Uuid
+  orgId          String              @db.Uuid
+  org            Org                 @relation(fields: [orgId], references: [id], onDelete: Cascade)
   meetingId      String // "AM-2026"
-  title          String            @default("")
+  title          String              @default("")
   definition     Json // meeting.json as parsed by src/tally/rules.ts parseMeeting (D-35 a)
-  definitionHash String            @db.Char(64) // SHA-256 of the canonical JSON of `definition`
-  salt           String            @db.Char(32) // 128 random bits; unitHash = SHA-256(meeting id | unit id | salt) (D-20)
-  status         MeetingStatus     @default(OPEN)
-  closedAt       String?           @db.Char(19) // meeting-axis instant supplied by the closer (D-35 b)
-  sealedAt       DateTime?         @db.Timestamptz(6) // audit column written by the seal trigger (D-35 b)
+  definitionHash String              @db.Char(64) // SHA-256 of the canonical JSON of `definition`
+  salt           String              @db.Char(32) // 128 random bits; unitHash = SHA-256(meeting id | unit id | salt) (D-20)
+  status         MeetingStatus       @default(OPEN)
+  closedAt       String?             @db.Char(19) // meeting-axis instant supplied by the closer (D-35 b)
+  sealedAt       DateTime?           @db.Timestamptz(6) // audit column written by the seal trigger (D-35 b)
   totalUnits     Int? // frozen at close (D-35 h)
   totalShareBps  Int? // frozen at close
-  merkleRoot     String?           @db.Char(64)
+  merkleRoot     String?             @db.Char(64)
   quorum         Json? // QuorumStatus at close
-  commitment     String?           @db.Char(64) // C-5 meeting commitment
-  createdAt      DateTime          @default(now()) @db.Timestamptz(6)
+  commitment     String?             @db.Char(64) // C-5 meeting commitment
+  createdAt      DateTime            @default(now()) @db.Timestamptz(6)
   proxies        Proxy[]
   revocations    ProxyRevocation[]
+  assessments    SpecialAssessment[]
   ballots        Ballot[]
   results        ContestResult[]
   secrets        BallotSecret[]
