@@ -1,15 +1,17 @@
 // Task 1.8: the whole meeting — ballots → quorum → contests → commitments (brief §7–§8; D-15..D-18). Pure and
 // deterministic in ballot order: evaluateBallots sorts, merkleRoot sorts, contests are walked in id order.
-import { evaluateBallots } from './ballots';
+import { evaluateBallots, evaluateSelection } from './ballots';
 import { shareBps } from './asof';
-import { compareStrings } from './canonical';
-import { otherMode, type ContestResult, type ElectionMode, type ResolutionBasis, type ResolutionChoice, type SelectionVoidCode } from './codes';
+import { compareStrings, sortedStrings } from './canonical';
+import { otherMode, type BallotRejectCode, type BallotStatus, type ContestResult, type ElectionMode, type ResolutionBasis, type ResolutionChoice, type SelectionVoidCode } from './codes';
 import { contestCommitment, meetingCommitment, merkleRoot } from './commit';
 import { RulesInvalid } from './errors';
+import { parseChoices } from './load';
 import { quorumStatus, type QuorumStatus } from './quorum';
 import type { Contest, Election, Meeting, Resolution } from './rules';
 import { seatsFromTotals } from './seats';
 import { passesByBasis } from './thresholds';
+import type { Timestamp } from './time';
 import type { Ballot, BallotResult, LedgerEntry, Ownership, Proxy, Unit, UnitShare } from './types';
 
 export type ContestBase = {
@@ -149,22 +151,58 @@ export function tallyResolution(c: Resolution, counted: readonly BallotResult[],
   };
 }
 
-export function tally(
-  meeting: Meeting,
-  units: readonly Unit[],
-  shares: readonly UnitShare[],
-  ownerships: readonly Ownership[],
-  ledger: readonly LedgerEntry[],
-  proxies: readonly Proxy[],
-  ballots: readonly Ballot[],
-): MeetingTally {
+/**
+ * A ballot as the Phase 2 tables keep it after close (D-20, D-31): no unit, no caster, no proxy id — only the
+ * direct/proxy flag the Q-rules need, the label the cast path wrote, and the canonical choices the receipt covers.
+ */
+export type StoredBallot = {
+  ballot_id: string;
+  via_proxy: boolean;
+  cast_at: Timestamp;
+  bps: number;
+  status: BallotStatus;
+  code: BallotRejectCode | '';
+  receipt: string;
+  choices_canonical: string;
+};
+
+/**
+ * Stored rows → BallotResult[]: the selections (S-1..S-5) are re-derived from the canonical choices of every
+ * COUNTED row, so the recount owns its own reading of the ballots rather than trusting a stored selection. The
+ * only field the stored row cannot supply is via_proxy_id; the Q-rules read nothing of it but its emptiness, so
+ * a proxy ballot carries the placeholder 'proxy'. Output is in cast order (B-4) whatever the row order.
+ */
+export function resultsFromStored(meeting: Meeting, rows: readonly StoredBallot[]): BallotResult[] {
+  const contests = new Map(meeting.contests.map((c) => [c.contest_id, c]));
+  const out: BallotResult[] = [];
+  for (const row of rows) {
+    const r: BallotResult = {
+      ballot_id: row.ballot_id,
+      unit_id: '',
+      cast_by: '',
+      via_proxy_id: row.via_proxy ? 'proxy' : '',
+      cast_at: row.cast_at,
+      status: row.status,
+      code: row.code,
+      receipt: row.receipt,
+      bps: row.bps,
+      selections: {},
+      unknown_contests: [],
+    };
+    if (row.status === 'COUNTED') {
+      const choices = parseChoices(row.choices_canonical, `stored.${row.ballot_id}.choices_canonical`);
+      for (const [cid, c] of contests) r.selections[cid] = evaluateSelection(c, choices[cid]);
+      r.unknown_contests = sortedStrings(Object.keys(choices).filter((k) => !contests.has(k)));
+    }
+    out.push(r);
+  }
+  return out.sort((a, b) => compareStrings(a.cast_at, b.cast_at) || compareStrings(a.ballot_id, b.ballot_id));
+}
+
+/** The meeting from evaluated results: quorum → contests → commitments. tally() and the Phase 2 recount both end here. */
+export function tallyFromResults(meeting: Meeting, totalUnits: number, totalBps: number, results: readonly BallotResult[]): MeetingTally {
   const rules = meeting.rules;
-  const results = evaluateBallots(meeting, units, shares, ownerships, ledger, proxies, ballots);
-  const asOf = rules.record_date;
-  const totalUnits = units.length;
-  let totalBps = 0;
-  for (const u of units) totalBps += shareBps(shares, u.unit_id, asOf);
-  if (totalBps !== rules.total_share_bps) throw new RulesInvalid('total_share_bps', `shares sum to ${totalBps} as of ${asOf}, rules say ${rules.total_share_bps}`); // D-9
+  if (totalBps !== rules.total_share_bps) throw new RulesInvalid('total_share_bps', `shares sum to ${totalBps} as of ${rules.record_date}, rules say ${rules.total_share_bps}`); // D-9
   const quorum = quorumStatus(rules, totalUnits, totalBps, results);
   const root = merkleRoot(results.map((r) => r.receipt)); // C-3: over every received ballot
   const counted = results.filter((r) => r.status === 'COUNTED');
@@ -179,7 +217,7 @@ export function tally(
   for (const r of results) unknown += r.unknown_contests.length;
   return {
     meeting_id: meeting.meeting_id,
-    record_date: asOf,
+    record_date: rules.record_date,
     ballots_received: results.length,
     ballots_counted: counted.length,
     ballots_rejected: results.length - counted.length,
@@ -189,6 +227,22 @@ export function tally(
     merkle_root: root,
     contests,
     meeting_commitment: meetingCommitment(commitments), // C-5
-    ballot_results: results,
+    ballot_results: [...results],
   };
+}
+
+export function tally(
+  meeting: Meeting,
+  units: readonly Unit[],
+  shares: readonly UnitShare[],
+  ownerships: readonly Ownership[],
+  ledger: readonly LedgerEntry[],
+  proxies: readonly Proxy[],
+  ballots: readonly Ballot[],
+): MeetingTally {
+  const results = evaluateBallots(meeting, units, shares, ownerships, ledger, proxies, ballots);
+  const asOf = meeting.rules.record_date;
+  let totalBps = 0;
+  for (const u of units) totalBps += shareBps(shares, u.unit_id, asOf);
+  return tallyFromResults(meeting, units.length, totalBps, results);
 }
