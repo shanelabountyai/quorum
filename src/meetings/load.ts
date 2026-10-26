@@ -6,6 +6,7 @@ import { randomBytes } from 'node:crypto';
 import { canonicalJson, sha256Hex } from '@/tally/canonical';
 import type { Meeting } from '@/tally/rules';
 import type { LedgerEntry, Ownership, Proxy, Unit, UnitShare } from '@/tally/types';
+import { assertNotArchived } from './archive';
 import type { Tx } from './db';
 
 export type OwnerRow = { owner_id: string; name: string; email: string };
@@ -34,6 +35,7 @@ function reconcile(table: string, wanted: readonly string[], existing: readonly 
 }
 
 export async function loadRoster(tx: Tx, orgId: string, input: RosterInput): Promise<LoadReport[]> {
+  await assertNotArchived(tx, orgId); // D-43
   const report: LoadReport[] = [];
   const note = (table: string, wanted: number, existing: number, inserted: number) => report.push({ table, wanted, existing, inserted });
 
@@ -104,6 +106,7 @@ export type MeetingRow = { id: string; meetingId: string; definitionHash: string
  * `salt` is 128 random bits unless the caller supplies one (tests and the replay do, for a reproducible unitHash).
  */
 export async function ensureMeeting(tx: Tx, orgId: string, definition: Meeting, salt?: string): Promise<MeetingRow> {
+  await assertNotArchived(tx, orgId); // D-43
   const definitionHash = sha256Hex(canonicalJson(definition));
   const have = await tx.meeting.findUnique({ where: { orgId_meetingId: { orgId, meetingId: definition.meeting_id } } });
   if (have) {
@@ -115,6 +118,7 @@ export async function ensureMeeting(tx: Tx, orgId: string, definition: Meeting, 
 }
 
 export async function loadProxies(tx: Tx, orgId: string, meetingRowId: string, proxies: readonly Proxy[]): Promise<LoadReport> {
+  await assertNotArchived(tx, orgId); // D-43
   const wanted = proxies.map((p) => canonicalJson({ proxyId: p.proxy_id, grantorUnit: p.grantor_unit, grantorOwner: p.grantor_owner, holderOwner: p.holder_owner, receivedAt: p.received_at, revokedAt: p.revoked_at === '' ? null : p.revoked_at }));
   const have = await tx.proxy.findMany({ where: { meetingId: meetingRowId }, include: { grantorUnit: true, grantorOwner: true, holderOwner: true } });
   if (reconcile('Proxy', wanted, have.map((p) => canonicalJson({ proxyId: p.proxyId, grantorUnit: p.grantorUnit.unitId, grantorOwner: p.grantorOwner.ownerId, holderOwner: p.holderOwner.ownerId, receivedAt: p.receivedAt, revokedAt: p.revokedAt }))) === 'match') {

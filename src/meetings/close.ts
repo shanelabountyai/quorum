@@ -6,6 +6,7 @@
 import { shareBps } from '@/tally/asof';
 import { resultsFromStored, tallyFromResults, type ContestTally, type MeetingTally } from '@/tally/tally';
 import type { Timestamp } from '@/tally/time';
+import { assertNotArchived } from './archive';
 import { asApp, type Tx } from './db';
 import { storedBallots } from './labels';
 import { readMeeting, readRoster } from './roster';
@@ -22,6 +23,7 @@ export async function closeInTx(tx: Tx, meetingRowId: string, closedAt: Timestam
     const stored = await readStoredResult(tx, meetingRowId);
     return { closed: false, closedAt: head.closedAt, tally: await recountInTx(tx, meetingRowId), stored };
   }
+  await assertNotArchived(tx, head.orgId); // D-43: closing writes the result; an archived org writes nothing new
   const roster = await readRoster(tx, head.orgId);
   const asOf = head.definition.rules.record_date;
   const totalUnits = roster.units.length;

@@ -5,13 +5,14 @@
 //   P0001 + "… is append-only"        → AppendOnlyViolation (the trigger names the table)
 //   P0001 + "… sealed"                → MeetingSealed (D-20: the Meeting guard after close, a label on a sealed set)
 //   P0001 + "… is closed"             → MeetingClosed (D-34, the close guard and quorum_cast_ballot)
+//   P0001 + "… is archived; …"        → ArchivedOrgWrite (D-43's second door)
 //   42501                             → PrivilegeDenied (the app role reaching a sealed or forbidden table)
 //   23514                             → CheckViolation (a D-8 string or an integer CHECK, naming the constraint)
 //   anything else                     → the original error, untouched
 
 export class QuorumDbError extends Error {
   constructor(
-    readonly kind: 'APPEND_ONLY' | 'MEETING_CLOSED' | 'MEETING_SEALED' | 'PRIVILEGE_DENIED' | 'CHECK_VIOLATION' | 'DB_REFUSAL',
+    readonly kind: 'APPEND_ONLY' | 'MEETING_CLOSED' | 'MEETING_SEALED' | 'PRIVILEGE_DENIED' | 'CHECK_VIOLATION' | 'ORG_ARCHIVED' | 'DB_REFUSAL',
     readonly sqlState: string,
     readonly detail: string,
     readonly cause?: unknown,
@@ -71,9 +72,18 @@ export function mapDbError(e: unknown): unknown {
     if (/append-only/.test(c.message)) return new AppendOnlyViolation(c.code, c.message, e);
     if (/closed and sealed|label is sealed/.test(c.message)) return new MeetingSealed(c.code, c.message, e);
     if (/is closed/.test(c.message)) return new MeetingClosed(c.code, c.message, e);
+    if (/is archived; nothing new is written/.test(c.message)) return new ArchivedOrgWrite(c.code, c.message, e);
     return new QuorumDbError('DB_REFUSAL', c.code, c.message, e);
   }
   return e;
+}
+
+/** D-43's second door: the trigger refused an insert for an archived org (the clone paths refuse first with OrgArchived). */
+export class ArchivedOrgWrite extends QuorumDbError {
+  constructor(sqlState: string, detail: string, cause?: unknown) {
+    super('ORG_ARCHIVED', sqlState, detail, cause);
+    this.name = 'ArchivedOrgWrite';
+  }
 }
 
 /** D-36: a cast whose castAt is earlier than the latest one recorded for the meeting; refused before any write. */
