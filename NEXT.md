@@ -20,6 +20,8 @@ Branch `kickoff`, PR #1 (`kickoff` → `main`, https://github.com/shanelabountya
 
 **CI:** see the run links at the bottom of this file (kept current after each push).
 
+**By hand (Shane):** review PR #1; delete the throwaway branch `ci-proof-1-14` on origin; `git push origin v1.3.0` from the Mac so the tag shim in `ci.yml` can go; add the port-table row (quorum → 7200) to `~/.claude/CLAUDE.md`; re-run `reuse-scan.py` against `docs/phase-1-tasks.md` and record it; decide O-10 and the 2.0 question in `docs/phase-2-tasks.md`; fix the stale pre-D-26 numbers in the PRD, `docs/portfolio-overlap.md` and D-15 (plan §Contradictions item 3); build-log card #21.
+
 ---
 
 **2026-10-25 (kickoff kit):** Kit written in the cloud workspace: PRD v1.0, decisions D-1..D-26 + O-2..O-9 (O-1 decided by the owner the same day: D-26, an owner's direct cast supersedes a counted proxy ballot), domain brief with the rule codes (B-1..B-3, P-1..P-8, E-1..E-9, S-1..S-5, Q-1..Q-4, T-1..T-11, C-1..C-7), golden cases GT-01..GT-21 and GQ-01..GQ-11, the defect and trap catalog, kickoff measurements, portfolio overlap, Phase 1 tasks (1.1–1.14), CLAUDE.md, KICKOFF.md, `.claude/settings.json` (Fable pin). Tools in `tools/` (Python 3, stdlib, run with `-I`): `tallylib.py` (spec made executable), `build_fixtures.py` (seed 20261025; asserts every trap and the answer key against the oracle before writing), `reference_tally.py` (eval table; `--write-expected`, `--shuffle`), `golden_answers.py` (prints OK), `verify_fixtures.py` (prints OK). Fixtures were generated twice in separate directories with identical sha256 values on all 15 files (brief §12); the full set is in `fixtures/` and samples plus `MANIFEST.json`, `meeting.json` and `reference_output.txt` are under `fixtures/samples/`.
@@ -31,3 +33,7 @@ Kickoff measurements (reference tally on the frozen fixtures, after the D-26 reg
 | When | Commit | Run | Result |
 |---|---|---|---|
 | 2026-10-26 | 924ad85 (kit, before this session) | https://github.com/shanelabountyai/quorum/actions/runs/40258284168 | green |
+| 2026-10-26 | e9714fe (Phase 1 engine + docs) | https://github.com/shanelabountyai/quorum/actions/runs/40260974830 | **red** — `foundation:drift`: shallow checkout had no `v1.3.0` tag (origin has no tags; the proxy refuses tag pushes). Fixed in 1755c14/7a3520a |
+| 2026-10-26 | 1755c14 | https://github.com/shanelabountyai/quorum/actions/runs/40261187177 | cancelled (superseded by 7a3520a) |
+| 2026-10-26 | 7a3520a (CI tags the release commit before drift) | https://github.com/shanelabountyai/quorum/actions/runs/40261257481 | **green** — ci and modules-removed |
+| 2026-10-26 | d42a1c8 on throwaway branch `ci-proof-1-14` (E1,UNITS,C-01 45→46 in `expected_totals.csv`) | https://github.com/shanelabountyai/quorum/actions/runs/40261860620 | **red** on `tally:eval`, as task 1.14 requires. The branch could not be deleted from the cloud (proxy 403); Shane deletes it |

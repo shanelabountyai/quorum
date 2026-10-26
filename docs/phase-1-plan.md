@@ -21,7 +21,7 @@ TDD order from CLAUDE.md, each step a commit with its failing test written again
 | 11 | 1.11 verify + recount | `published.ts`, `scripts/tally-verify.ts`, `scripts/tally-recount.ts` | every receipt verifies, a flipped digit does not; recount matches on 29 values, 6 not recomputable (D-28) | done |
 | 12 | 1.12 `tally:lint` | with step 1; planted `Math.random()` fails it | done |
 | 13 | 1.13 `docs/EVAL.md` | the §11 table as printed by TypeScript | done |
-| 14 | 1.14 CI gate | `ci.yml` runs `tally:lint`, `tally:eval`, `fixtures:check`, vitest under `TZ=America/Chicago` | red/green proof: see NEXT.md |
+| 14 | 1.14 CI gate | `ci.yml` runs `foundation:drift`, `tally:lint`, `tally:eval`, `fixtures:check`, vitest under `TZ=America/Chicago` | done — red run 40261860620 (throwaway branch `ci-proof-1-14`, one total edited, fails on `tally:eval`), green run 40261257481 on `kickoff`; links in NEXT.md |
 
 ## Donors read for the ports (task 1.3)
 
@@ -62,3 +62,5 @@ TDD order from CLAUDE.md, each step a commit with its failing test written again
 - Therefore `npm run typecheck` fails on the template's `@/generated/prisma/*` imports only (15 errors, none under `src/tally`, `scripts/tally-*`, `tests/tally`; checked with a filtered `tsc --noEmit`); `npm test` (database half), `npm run db:setup`, `npm run test:e2e`, `foundation:check-modules` (needs `prisma validate`/`next build`) were not run locally.
 - Ran locally and green: `foundation:drift`, `lint`, `tally:lint`, `tally:eval`, `fixtures:check`, `test:engine` (181 tests), `tally:verify`, `tally:recount`.
 - `gh auth status` reports the token invalid but `gh api` reads work; PR #1 (`kickoff` → `main`) is open, so every push to `kickoff` runs CI.
+- The proxy refuses `git push` of a tag and of a branch deletion (HTTP 403 / "remote end hung up"), so origin has no `v1.3.0` tag (CI tags the release commit by its message before `foundation:drift`; see the comment in `ci.yml`) and the throwaway branch `ci-proof-1-14` is still on origin for Shane to delete. Run logs are on a blob host the proxy also refuses; failures were diagnosed from the step list and the local reproduction.
+- `actions/checkout@v4`'s shallow clone broke `foundation:drift` on the first push (run 40260974830: no `v1.3.0` to diff against); fixed with `fetch-depth: 0` + the tag shim.
