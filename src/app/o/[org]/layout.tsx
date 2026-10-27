@@ -21,7 +21,7 @@ export default async function OrgLayout({ children, params }: { children: React.
         <NavLink href={`${base}/violations`}>Violations</NavLink>
         <NavLink href={`${base}/settings/members`}>Members</NavLink>
         {can(ctx.role, 'org.delete') && <><NavLink href={`${base}/settings/archive`}>Archive</NavLink><NavLink href={`${base}/settings/danger`}>Delete org</NavLink></>}
-        <span className="end"><Link href="/associations">Your associations</Link><Link href="/account/security">Account</Link></span>
+        <span className="end"><NavLink href={`${base}/design`}>Design</NavLink><Link href="/associations">Your associations</Link><Link href="/account/security">Account</Link></span>
       </nav>
       {children}
     </>

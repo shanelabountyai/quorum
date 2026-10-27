@@ -3,6 +3,7 @@
 // shows the receipt, the ballot id and the nonce ONCE — they are not stored anywhere the voter can come back to
 // (the nonce is never stored at all, C-2) — with the D-2 sentence. A rejected ballot shows its code and its receipt:
 // it was received, it is in the root, and it is published with that code (D-11).
+import { Pill } from './pill';
 import { useActionState, useId } from 'react';
 
 export type ContestField =
@@ -18,8 +19,9 @@ export function CastForm({ action, contests, limit, children }: { action: (form:
   const r = state && typeof state === 'object' && 'receipt' in state ? ((state as { receipt: Receipt }).receipt) : null;
   if (r) {
     return (
-      <section aria-labelledby={hid} role="status">
+      <section aria-labelledby={hid} role="status" className="receipt stack">
         <h2 id={hid}>{r.status === 'COUNTED' ? 'Ballot counted' : `Ballot received and rejected: ${r.code}`}</h2>
+        <p><Pill k={r.status === 'COUNTED' ? 'good' : 'risk'}>{r.status}</Pill></p>
         <dl>
           <dt>Meeting</dt><dd>{r.meetingId}</dd>
           <dt>Cast at</dt><dd>{r.castAt}</dd>

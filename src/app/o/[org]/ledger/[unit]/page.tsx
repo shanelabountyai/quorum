@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { LinkButton, PageHeader, Pill, Section, Stat, Stats } from '@/components/ui';
 import { notFound } from 'next/navigation';
 import { requireOrg } from '@/core/authz/guards';
 import { can } from '@/core/authz/permissions';
@@ -43,18 +43,20 @@ export default async function Statement({ params, searchParams }: { params: Prom
   const s = v.s;
   return (
     <main>
-      <h1>Unit {s.unitId}: statement</h1>
+      <PageHeader eyebrow="Ledger" title={`Unit ${s.unitId}: statement`} actions={<LinkButton href={`/o/${ctx.slug}/ledger`} variant="secondary">All units</LinkButton>} />
       <ScopeNote />
-      <p><Link href={`/o/${ctx.slug}/ledger`}>All units</Link></p>
       <form method="get">
         <label>As of <input name="asOf" defaultValue={v.asOf} pattern="\d{4}-\d{2}-\d{2}" /></label> <button type="submit">Show</button>
       </form>
-      <p>Balance as of {s.asOf}: <strong data-testid="balance">{formatCents(s.balanceCents)}</strong> ({s.delinquent ? 'delinquent: a ballot from this unit is rejected INELIGIBLE_DELINQUENT when the meeting suspends delinquent units' : 'good standing'}).</p>
+      <Stats>
+        <Stat label={`Balance as of ${s.asOf}`} value={<strong data-testid="balance">{formatCents(s.balanceCents)}</strong>} sub={<Pill k={s.delinquent ? 'risk' : 'good'}>{s.delinquent ? 'delinquent' : 'good standing'}</Pill>} k={s.delinquent ? 'risk' : 'good'} />
+      </Stats>
+      {s.delinquent && <p className="muted">A ballot from this unit is rejected INELIGIBLE_DELINQUENT when the meeting suspends delinquent units.</p>}
       <Lines lines={s.lines} />
-      {s.later.length > 0 && (<><h2>Dated after {s.asOf}</h2><Lines lines={s.later} /></>)}
+      {s.later.length > 0 && (<Section id="later-h" title={`Dated after ${s.asOf}`}><Lines lines={s.later} /></Section>)}
       {board && (
         <>
-          <h2>Post a payment</h2>
+          <Section id="pay-h" title="Post a payment">
           <ActionForm action={postPaymentAction.bind(null, ctx.slug)}>
             <input type="hidden" name="unitId" value={unit} />
             <label>Amount ($) <input name="amount" inputMode="decimal" required /></label>
@@ -62,7 +64,8 @@ export default async function Statement({ params, searchParams }: { params: Prom
             <label>Memo <input name="memo" /></label>
             <button type="submit">Post payment</button>
           </ActionForm>
-          <h2>Post a credit</h2>
+          </Section>
+          <Section id="credit-h" title="Post a credit">
           <ActionForm action={postCreditAction.bind(null, ctx.slug)}>
             <input type="hidden" name="unitId" value={unit} />
             <label>Amount ($) <input name="amount" inputMode="decimal" required /></label>
@@ -71,9 +74,9 @@ export default async function Statement({ params, searchParams }: { params: Prom
             <label>Memo <input name="memo" /></label>
             <button type="submit">Post credit</button>
           </ActionForm>
+          </Section>
           {s.lines.filter((l) => l.kind !== 'CREDIT' && l.kind !== 'PAYMENT').length > 0 && (
-            <>
-              <h2>Reverse a charge or fine</h2>
+            <Section id="rev-h" title="Reverse a charge or fine">
               <ActionForm action={reverseEntryAction.bind(null, ctx.slug)}>
                 <input type="hidden" name="unitId" value={unit} />
                 <label>Entry <select name="reversesId" required>{[...s.lines, ...s.later].filter((l) => l.kind === 'CHARGE' || l.kind === 'FINE').map((l) => <option key={l.rowId} value={l.rowId}>{l.date} {l.entryId} {l.kind} {formatCents(l.amountCents)}</option>)}</select></label>
@@ -82,7 +85,7 @@ export default async function Statement({ params, searchParams }: { params: Prom
                 <label>Reason <input name="reason" required /></label>
                 <button type="submit">Post reversing credit</button>
               </ActionForm>
-            </>
+            </Section>
           )}
         </>
       )}

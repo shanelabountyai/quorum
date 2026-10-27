@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { EmptyState, MeetingTabs, Notice, PageHeader, Pill, Section, Stat, Stats, resultKind } from '@/components/ui';
 import { requireOrg } from '@/core/authz/guards';
 import { can } from '@/core/authz/permissions';
 import { ActionForm } from '@/core/ui/action-form';
@@ -41,22 +41,26 @@ export default async function MeetingPage({ params }: { params: Promise<{ org: s
   const slug = ctx.slug;
   return (
     <main>
-      <h1>{v.head.meetingId}: {v.head.definition.title}</h1>
+      <PageHeader
+        eyebrow="Meeting"
+        title={`${v.head.meetingId}: ${v.head.definition.title}`}
+        status={<Pill k={v.head.closedAt ? 'done' : 'info'}>{v.head.closedAt ? `Closed at ${v.head.closedAt}` : 'Open'}</Pill>}
+        lead={`Voting window ${r.open_at} to ${r.close_at} (${r.timezone_label}); record date ${r.record_date}.`}
+      />
+      <MeetingTabs base={base} board={board} />
       <ScopeNote>Live figures are the engine&apos;s labels on the ballots received so far.</ScopeNote>
-      <p>
-        <strong>{v.head.closedAt ? `Closed at ${v.head.closedAt}` : 'Open'}</strong> · window {r.open_at} to {r.close_at} ({r.timezone_label}) · record date {r.record_date}
-        {' · '}<Link href={`${base}/vote`}>Vote</Link>
-        {board && <> · <Link href={`${base}/desk`}>Desk</Link></>}
-        {' · '}<Link href={`${base}/results`}>Results</Link>
-      </p>
 
-      <h2>Quorum now</h2>
-      <p>
-        Ballots received {v.live.received}, counted {v.live.counted}, rejected {v.live.rejected}. Quorum basis {q.basis}, threshold {q.threshold_bps} bps:
-        units {q.units_represented}/{q.total_units} {met(q.units_met)}; weighted {q.bps_represented}/{q.total_bps} bps {met(q.weighted_met)}; direct only {q.direct_units}/{q.total_units} {met(q.direct_only_met)} (proxy units {q.proxy_units}). <strong>Binding: {met(q.met)}</strong>.
-      </p>
+      <Section id="quorum-h" title="Quorum now">
+        <Stats>
+          <Stat label="Units represented" value={`${q.units_represented}/${q.total_units}`} sub={<Pill k={resultKind(met(q.units_met))}>{met(q.units_met)}</Pill>} />
+          <Stat label="Weighted (bps)" value={`${q.bps_represented}/${q.total_bps}`} sub={<Pill k={resultKind(met(q.weighted_met))}>{met(q.weighted_met)}</Pill>} />
+          <Stat label="Direct only" value={`${q.direct_units}/${q.total_units}`} sub={<><Pill k={resultKind(met(q.direct_only_met))}>{met(q.direct_only_met)}</Pill> proxy units {q.proxy_units}</>} />
+          <Stat label="Binding" value={<Pill k={resultKind(met(q.met))}>{met(q.met)}</Pill>} sub={`basis ${q.basis}, ${q.threshold_bps} bps`} k={resultKind(met(q.met))} />
+        </Stats>
+        <p className="muted">Ballots received {v.live.received}, counted {v.live.counted}, rejected {v.live.rejected}.</p>
+      </Section>
 
-      <h2>Rules and contests</h2>
+      <Section id="rules-h" title="Rules and contests">
       <p>
         Proxies: depth {r.proxy_max_depth}; holder must be a member: {String(r.proxy_holder_must_be_member)}. Delinquency suspends voting: {String(r.delinquency_suspends_voting)}. Duplicate rule {r.duplicate_unit_rule}. Total shares {r.total_share_bps} bps.
       </p>
@@ -73,8 +77,9 @@ export default async function MeetingPage({ params }: { params: Promise<{ org: s
           ))}
         </tbody>
       </table>
+      </Section>
 
-      <h2>Eligibility as of {snap.record_date}</h2>
+      <Section id="elig-h" title={`Eligibility as of ${snap.record_date}`}>
       {scope.kind === 'all' ? (
         <p>Delinquent (balance above zero, E-4/E-5): {snap.delinquent_units.join(', ') || 'none'}{snap.suspends_voting ? ' — their ballots are rejected INELIGIBLE_DELINQUENT.' : ' — the rules do not suspend their votes.'}</p>
       ) : elig.rows.length ? (
@@ -82,8 +87,10 @@ export default async function MeetingPage({ params }: { params: Promise<{ org: s
       ) : (
         <p>Only the board and the manager see the delinquent list (O-8). Your own units appear here once your account is linked to a roster owner.</p>
       )}
+      </Section>
 
-      <h2>Proxies ({v.proxies.length})</h2>
+      <Section id="proxies-h" title={`Proxies (${v.proxies.length})`}>
+      {v.proxies.length === 0 && <EmptyState>No proxies recorded.</EmptyState>}
       {v.proxies.length > 0 && (
         <table>
           <thead><tr><th scope="col">Proxy</th><th scope="col">Unit</th><th scope="col">Grantor</th><th scope="col">Holder</th><th scope="col">Received</th><th scope="col">Revoked</th><th scope="col">At intake</th></tr></thead>
@@ -94,10 +101,11 @@ export default async function MeetingPage({ params }: { params: Promise<{ org: s
           </tbody>
         </table>
       )}
+      </Section>
 
       {board && !v.head.closedAt && (
         <>
-          <h2>Record a proxy</h2>
+          <Section id="record-h" title="Record a proxy">
           <ActionForm action={intakeProxyAction.bind(null, slug)}>
             <input type="hidden" name="meetingId" value={v.head.id} />
             <label>Unit <select name="unitId" required>{v.units.map((u) => <option key={u.id} value={u.id}>{u.unitId}</option>)}</select></label>
@@ -106,24 +114,29 @@ export default async function MeetingPage({ params }: { params: Promise<{ org: s
             <label>Received at (blank = now) <input name="receivedAt" placeholder="YYYY-MM-DDTHH:MM:SS" pattern="\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}" /></label>
             <button type="submit">Record proxy</button>
           </ActionForm>
-          <h2>Import proxies</h2>
+          </Section>
+          <Section id="import-h" title="Import proxies">
           <ActionForm action={importProxiesAction.bind(null, slug)}>
             <input type="hidden" name="meetingId" value={v.head.id} />
             <label htmlFor="proxies">proxies.csv (proxy_id, grantor_unit, grantor_owner, holder_owner, received_at, revoked_at)</label>
             <textarea id="proxies" name="proxies" rows={6} required />
             <button type="submit">Import proxies</button>
           </ActionForm>
-          <h2>Notice</h2>
+          </Section>
+          <Section id="notice-h" title="Notice">
           <ActionForm action={queueNoticeAction.bind(null, slug)}>
             <input type="hidden" name="meetingId" value={v.head.id} />
             <button type="submit">Queue the meeting notice to every owner of record</button>
           </ActionForm>
-          <h2>Close</h2>
+          </Section>
+          <Section id="close-h" title="Close">
+          <Notice k="hold" title="Closing is permanent">It cannot be undone and it needs a recent sign-in.</Notice>
           <p>Closing records the result once, publishes the commitments and seals the voter link: after it, the application cannot read who cast which ballot (D-20). It needs a sign-in within the last five minutes.</p>
           <ActionForm action={closeMeetingAction.bind(null, slug)}>
             <input type="hidden" name="meetingId" value={v.head.id} />
             <button type="submit">Close and seal the meeting</button>
           </ActionForm>
+          </Section>
         </>
       )}
     </main>

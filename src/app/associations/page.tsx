@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { EmptyState, LinkButton, PageHeader, Pill } from '@/components/ui';
 import { requireUser } from '@/core/auth/session';
 import { db } from '@/core/db';
 
@@ -13,16 +14,22 @@ export default async function Associations() {
   const live = memberships.filter((m) => !archived.has(m.org.id));
   return (
     <main>
-      <h1>Your associations</h1>
-      <p>Signed in as {s.email} · <Link href="/onboarding">Create or join an org</Link> · <Link href="/account/security">Account</Link></p>
+      <PageHeader
+        title="Your associations"
+        lead={<>Signed in as {s.email}</>}
+        actions={<><LinkButton href="/onboarding" variant="secondary">Create or join an org</LinkButton><LinkButton href="/account/security" variant="ghost">Account</LinkButton></>}
+      />
       {live.length ? (
-        <ul>
+        <ul className="stack" style={{ listStyle: 'none', padding: 0 }}>
           {live.map((m) => (
-            <li key={m.org.slug}><Link href={`/o/${m.org.slug}`}>{m.org.name}</Link> ({m.role})</li>
+            <li key={m.org.slug} className="card cluster" style={{ justifyContent: 'space-between' }}>
+              <Link href={`/o/${m.org.slug}`}><strong>{m.org.name}</strong></Link>
+              <Pill k="info">{m.role}</Pill>
+            </li>
           ))}
         </ul>
       ) : (
-        <p>You are not in an active association.</p>
+        <EmptyState action={<LinkButton href="/onboarding">Create or join an org</LinkButton>}>You are not in an active association.</EmptyState>
       )}
       {archived.size > 0 && <p>{archived.size} archived association{archived.size === 1 ? ' is' : 's are'} hidden.</p>}
     </main>

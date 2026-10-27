@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Pill } from '@/components/pill';
+import { EmptyState, LinkButton, Notice, PageHeader, Pill, Section, Stat, Stats } from '@/components/ui';
 import { requireOrg } from '@/core/authz/guards';
 import { can } from '@/core/authz/permissions';
 import { ScopeNote } from '@/components/honesty';
@@ -23,33 +23,40 @@ export default async function OrgHome({ params }: { params: Promise<{ org: strin
   const board = can(ctx.role, 'org.update');
   return (
     <main>
-      <h1>Association home</h1>
+      <PageHeader eyebrow="Association" title="Association home" lead="Meetings, the roster, the dues ledger and violations for this association." />
       {v.archive && (
-        <p className="archived" role="note">
+        <Notice k="done" title="Archived">
           Archived on {v.archive.archivedAt.toISOString()} — {v.archive.reason}. The history can be read; nothing new can be written (D-43).
-        </p>
+        </Notice>
       )}
       <ScopeNote />
-      <p>
-        {v.units} units, {v.owners} owners on the roster, {v.meetings.length} meetings, {v.violations} violations.{' '}
-        {v.units === 0 && board && <Link href={`${base}/roster`}>Import the roster</Link>}
-      </p>
+      {v.units === 0 && board ? (
+        <EmptyState action={<LinkButton href={`${base}/roster`}>Import the roster</LinkButton>}>No roster yet: the units, shares and owners come first.</EmptyState>
+      ) : (
+        <Stats>
+          <Stat label="Units" value={v.units} />
+          <Stat label="Owners on the roster" value={v.owners} />
+          <Stat label="Meetings" value={v.meetings.length} />
+          <Stat label="Violations" value={v.violations} />
+        </Stats>
+      )}
       <p>
         You are signed in as a <strong>{ctx.role}</strong>
         {v.me ? <> linked to roster owner <strong>{v.me.ownerId}</strong> ({v.me.name}).</> : <>. Your account is not linked to a roster owner: a link is made when you accept an invite sent to the email the association has on file for you (D-39).</>}
       </p>
-      <h2>Meetings</h2>
-      {v.meetings.length ? (
-        <ul>
-          {v.meetings.map((m) => (
-            <li key={m.id}>
-              <Link href={`${base}/meetings/${m.id}`}>{m.meetingId}</Link> {m.title} <Pill k={m.status === 'CLOSED' ? 'done' : 'info'}>{m.status}</Pill>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No meetings yet.</p>
-      )}
+      <Section id="meetings-h" title="Meetings" aside={<LinkButton href={`${base}/meetings`} variant="ghost">All meetings</LinkButton>}>
+        {v.meetings.length ? (
+          <ul className="stack" style={{ listStyle: 'none', padding: 0 }}>
+            {v.meetings.map((m) => (
+              <li key={m.id} className="cluster">
+                <Link href={`${base}/meetings/${m.id}`}>{m.meetingId}</Link> {m.title} <Pill k={m.status === 'CLOSED' ? 'done' : 'info'}>{m.status}</Pill>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState>No meetings yet.</EmptyState>
+        )}
+      </Section>
     </main>
   );
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LinkButton, Notice, PageHeader, Pill, Section, violationKind } from '@/components/ui';
 import { notFound } from 'next/navigation';
 import { requireOrg } from '@/core/authz/guards';
 import { can } from '@/core/authz/permissions';
@@ -31,10 +32,9 @@ export default async function ViolationPage({ params }: { params: Promise<{ org:
   const next = nextStates(current);
   return (
     <main>
-      <h1>{r.number}: {r.title}</h1>
+      <PageHeader eyebrow="Violation" title={`${r.number}: ${r.title}`} status={<Pill k={violationKind(current)}>{current}</Pill>} lead={<>Unit <Link href={`/o/${ctx.slug}/ledger/${r.unit.id}`}>{r.unit.unitId}</Link>, opened {r.openedOn}.</>} actions={<LinkButton href={`/o/${ctx.slug}/violations`} variant="secondary">All violations</LinkButton>} />
       <ScopeNote />
-      <p><Link href={`/o/${ctx.slug}/violations`}>All violations</Link> · unit <Link href={`/o/${ctx.slug}/ledger/${r.unit.id}`}>{r.unit.unitId}</Link> · opened {r.openedOn} · now <strong>{current}</strong></p>
-      <h2>Trail</h2>
+      <Section id="trail-h" title="Trail">
       <table>
         <thead><tr><th scope="col">#</th><th scope="col">State</th><th scope="col">Day</th><th scope="col">Detail</th><th scope="col">Reason</th></tr></thead>
         <tbody>
@@ -43,9 +43,9 @@ export default async function ViolationPage({ params }: { params: Promise<{ org:
           ))}
         </tbody>
       </table>
+      </Section>
       {board && (next.length ? (
-        <>
-          <h2>Next step</h2>
+        <Section id="next-h" title="Next step">
           <ActionForm action={transitionAction.bind(null, ctx.slug)}>
             <input type="hidden" name="violationId" value={r.id} />
             <label>To <select name="to" required>{next.map((s) => <option key={s} value={s}>{s}</option>)}</select></label>
@@ -55,9 +55,9 @@ export default async function ViolationPage({ params }: { params: Promise<{ org:
             <label>Reason <input name="reason" /></label>
             <button type="submit">Record step</button>
           </ActionForm>
-        </>
+        </Section>
       ) : (
-        <p>{current} is final: nothing follows it.</p>
+        <Notice k="done" title="Final"><p>{current} is final: nothing follows it.</p></Notice>
       ))}
     </main>
   );

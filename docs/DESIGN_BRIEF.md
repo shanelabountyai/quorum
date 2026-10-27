@@ -1,6 +1,6 @@
 # Quorum: design brief
 
-Decided 2026-10-27 (D-56). Applied in `src/app/quorum.css`, `src/components/pill.tsx`, the org nav and the pages listed under *Where it is applied*. Written after the build, so it describes what was applied, not a mock-up that was never made.
+Decided 2026-10-27 (D-56). **The tokens, components and rules are now in `docs/DESIGN_SYSTEM.md` (D-57); this file stays the "why".** Applied in `src/app/quorum.css`, `src/components/pill.tsx`, the org nav and the pages listed under *Where it is applied*. Written after the build, so it describes what was applied, not a mock-up that was never made.
 
 ## The product in one paragraph
 

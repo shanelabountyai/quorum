@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { EmptyState, Notice, PageHeader, Section } from '@/components/ui';
 import { Pill } from '@/components/pill';
 import { requireOrg } from '@/core/authz/guards';
 import { can } from '@/core/authz/permissions';
@@ -32,12 +33,16 @@ export default async function Ledger({ params, searchParams }: { params: Promise
   const delinquent = v.balances.filter((b) => b.delinquent);
   return (
     <main>
-      <h1>Ledger</h1>
+      <PageHeader eyebrow="Association" title="Ledger" lead="Dues, payments and credits per unit, in whole cents." />
       <ScopeNote>Balances are Σ charges and fines − Σ payments and credits dated on or before the day (E-4), in integer cents; nothing is collected.</ScopeNote>
       <form method="get">
         <label>As of <input name="asOf" defaultValue={v.asOf} pattern="\d{4}-\d{2}-\d{2}" /></label> <button type="submit">Show</button>
       </form>
-      {board && <p>Delinquent as of {v.asOf}: {delinquent.map((b) => b.unitId).join(', ') || 'none'}.</p>}
+      {board && (
+        <Notice k={delinquent.length ? 'risk' : 'good'} title={delinquent.length ? `${delinquent.length} delinquent` : 'No delinquent units'}>
+          <p>Delinquent as of {v.asOf}: {delinquent.map((b) => b.unitId).join(', ') || 'none'}.</p>
+        </Notice>
+      )}
       {!board && v.balances.length === 0 && <p>Your account is not linked to a roster owner, so there is no unit to show. Board and manager see every unit (O-8).</p>}
       {v.balances.length > 0 && (
         <table>
@@ -51,7 +56,7 @@ export default async function Ledger({ params, searchParams }: { params: Promise
       )}
       {board && (
         <>
-          <h2>Dues runs</h2>
+          <Section id="runs-h" title="Dues runs">
           {v.runs.length ? (
             <table>
               <thead><tr><th scope="col">Month</th><th scope="col" className="num">Budget</th><th scope="col" className="num">Charged to {v.runs[0]!.units} units</th><th scope="col" className="num">ROUNDING line</th></tr></thead>
@@ -62,15 +67,17 @@ export default async function Ledger({ params, searchParams }: { params: Promise
               </tbody>
             </table>
           ) : (
-            <p>No dues run posted from this screen yet.</p>
+            <EmptyState>No dues run posted from this screen yet.</EmptyState>
           )}
-          <h2>Post a month&apos;s dues</h2>
+          </Section>
+          <Section id="post-h" title="Post a month's dues">
           <p>Each unit is charged budget × its share ÷ 10000, rounded down to the cent; what that leaves is the association&apos;s ROUNDING line, so the month sums to the budget exactly (D-21). A month posts once.</p>
           <ActionForm action={runDuesAction.bind(null, ctx.slug)}>
             <label>Month <input name="month" placeholder="YYYY-MM" pattern="\d{4}-\d{2}" required /></label>
             <label>Monthly budget ($) <input name="budget" placeholder="35000.00" inputMode="decimal" required /></label>
             <button type="submit">Post dues</button>
           </ActionForm>
+          </Section>
         </>
       )}
     </main>

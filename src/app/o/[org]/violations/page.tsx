@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { EmptyState, PageHeader, Pill, Section, violationKind } from '@/components/ui';
 import { requireOrg } from '@/core/authz/guards';
 import { can } from '@/core/authz/permissions';
 import { ActionForm } from '@/core/ui/action-form';
@@ -23,30 +24,29 @@ export default async function Violations({ params }: { params: Promise<{ org: st
   });
   return (
     <main>
-      <h1>Violations</h1>
+      <PageHeader eyebrow="Association" title="Violations" lead="Each record moves only along the workflow, and every step is permanent." />
       <ScopeNote>A violation moves only along the workflow (notice, hearing, continued, fine or dismissed); each step is a permanent record with who, when and why (D-22).</ScopeNote>
       {v.rows.length ? (
         <table>
           <thead><tr><th scope="col">Record</th><th scope="col">Unit</th><th scope="col">Opened</th><th scope="col">State</th></tr></thead>
           <tbody>
             {v.rows.map((r) => (
-              <tr key={r.id}><td><Link href={`/o/${ctx.slug}/violations/${r.id}`}>{r.number}</Link> {r.title}</td><td>{r.unit.unitId}</td><td>{r.openedOn}</td><td>{r.events[0]?.state}</td></tr>
+              <tr key={r.id}><td><Link href={`/o/${ctx.slug}/violations/${r.id}`}>{r.number}</Link> {r.title}</td><td>{r.unit.unitId}</td><td>{r.openedOn}</td><td>{r.events[0] && <Pill k={violationKind(r.events[0].state)}>{r.events[0].state}</Pill>}</td></tr>
             ))}
           </tbody>
         </table>
       ) : (
-        <p>No violations{board ? '' : ' on your units'}.</p>
+        <EmptyState>No violations{board ? '' : ' on your units'}.</EmptyState>
       )}
       {board && (
-        <>
-          <h2>Open a violation</h2>
+        <Section id="open-h" title="Open a violation">
           <ActionForm action={openViolationAction.bind(null, ctx.slug)}>
             <label>Unit <select name="unitId" required>{v.units.map((u) => <option key={u.id} value={u.id}>{u.unitId}</option>)}</select></label>
             <label>What <input name="title" required maxLength={300} /></label>
             <label>Notice date <input name="day" defaultValue={v.today} pattern="\d{4}-\d{2}-\d{2}" required /></label>
             <button type="submit">Open and queue the notice</button>
           </ActionForm>
-        </>
+        </Section>
       )}
     </main>
   );
