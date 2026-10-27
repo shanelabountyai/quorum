@@ -32,6 +32,10 @@ Done on the Mac, 2026-10-26: port moved to 6200 and the port-table row added (D-
 ## Still to do for closure (house definition of done)
 
 - [x] `docs/DEMO.md`
-- [ ] Exec brief, *Quorum in Brief* (`exec-brief` skill)
+- [x] Exec brief, *Quorum in Brief*: https://claude.ai/artifact/WeXdqKB6ix8t1e4jhoo7bF (private until shared; no screenshots yet, the project has no capture spec)
 - [ ] LinkedIn drafts in the Ledger (mine D-47's 76-cents-not-1, the D-40 id-space test, D-26)
-- [ ] Cost review: expected near zero (not deployed, no cron, no LLM), but record it with `keep / off` lines
+- [x] Cost review (2026-10-27; no Vercel or Neon project is linked locally, `.vercel` absent, not checked against the accounts):
+  - Vercel project / auto-deploy per push: **off** (none exists). Restore: create the project only for a deployment; `vercel.json` already carries the `ignoreCommand`.
+  - `vercel.json` cron `/api/cron` daily 06:00 UTC: **keep as is, inert** (D-44: it no longer drains notices; nothing runs without a project). Restore trigger: none.
+  - GitHub Actions: runs on push and PR only, no `schedule`. **Keep.**
+  - Neon / always-on database: **none**; tests use local Postgres. LLM calls and keys: **none**. Storage/blob: **none**. Baseline: $0 by absence.

@@ -1,6 +1,10 @@
 # NEXT
 
-## ▶ Next session: closure deliverables — exec brief, LinkedIn drafts, cost review (`docs/CLOSEOUT.md` § Still to do)
+## ▶ Next session: LinkedIn drafts only (`docs/CLOSEOUT.md` § Still to do). Exec brief and cost review are done (2026-10-27).
+
+Brief: https://claude.ai/artifact/WeXdqKB6ix8t1e4jhoo7bF (private; add two screenshots once a capture exists, share when ready). Posts go in the Ledger https://claude.ai/artifact/Ai5xKScgT2sWtqXRQ1ZA8i, tagged quorum + pillar, no two adjacent drafts sharing a pillar. Mine: D-47 (76 cents, not 1), D-40 (random ballot ids), D-26, E2 tie left open.
+
+Found 2026-10-27: `npm test` locally 457/458; `tests/meetings/roles.test.ts:72` runs `SET ROLE postgres`, a role this Mac lacks (SQLSTATE 22023, not 42501), so the check is environmental, not a regression. CI is the judge; fix the test to use the owner role rather than a literal.
 
 Model: Sonnet (prose; no engine logic). PR #1 still open, never merged by the agent; Shane's by-hand list is `docs/CLOSEOUT.md` § By hand.
 
