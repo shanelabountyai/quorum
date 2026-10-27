@@ -4,7 +4,7 @@
 
 All four closure items exist: `docs/DEMO.md`, brief https://claude.ai/artifact/WeXdqKB6ix8t1e4jhoo7bF (public, links labintelligence.co), LinkedIn #129 and #130 in the Ledger https://claude.ai/artifact/Ai5xKScgT2sWtqXRQ1ZA8i (Quorum filter chip added), cost review ($0 by absence). Spare angles if more posts are wanted: D-47 (76 cents, overlaps #108), D-40 (ID space exhausted in its own test).
 
-Brief now carries two results screenshots (2026-10-27, from the 113-ballot meeting via `dev:test`; capture script was throwaway). PR #1 merged 2026-10-27 on Shane's say-so. Still open for Shane: `docs/CLOSEOUT.md` § By hand.
+Design brief `docs/DESIGN_BRIEF.md` applied (D-56, ee4505d). Brief (v4) carries two results screenshots of the styled app and a reworded "screens are plain" caveat (2026-10-27, 113-ballot meeting via `dev:test`; capture script throwaway). Not styled yet: meeting detail and violations pills; receipt-check notice is green for both outcomes. PR #1 merged 2026-10-27 on Shane's say-so. Still open for Shane: `docs/CLOSEOUT.md` § By hand.
 
 **2026-10-26 (fourth session, on the Mac, Shane present) — closeout part 1.**
 - Port **6200**, not 7200 (D-54): `package.json`, `playwright.config.ts`, `ci.yml`, README, CLAUDE.md; row added to the port table in `~/.claude/CLAUDE.md` (next free now 6300).
