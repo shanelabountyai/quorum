@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Pill } from '@/components/pill';
 import { requireOrg } from '@/core/authz/guards';
 import { can } from '@/core/authz/permissions';
 import { ScopeNote } from '@/components/honesty';
@@ -42,7 +43,7 @@ export default async function OrgHome({ params }: { params: Promise<{ org: strin
         <ul>
           {v.meetings.map((m) => (
             <li key={m.id}>
-              <Link href={`${base}/meetings/${m.id}`}>{m.meetingId}</Link> {m.title} — {m.status}
+              <Link href={`${base}/meetings/${m.id}`}>{m.meetingId}</Link> {m.title} <Pill k={m.status === 'CLOSED' ? 'done' : 'info'}>{m.status}</Pill>
             </li>
           ))}
         </ul>

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Pill } from '@/components/pill';
 import { requireOrg } from '@/core/authz/guards';
 import { can } from '@/core/authz/permissions';
 import { ActionForm } from '@/core/ui/action-form';
@@ -43,7 +44,7 @@ export default async function Ledger({ params, searchParams }: { params: Promise
           <thead><tr><th scope="col">Unit</th><th scope="col" className="num">Balance as of {v.asOf}</th><th scope="col">Standing</th></tr></thead>
           <tbody>
             {v.balances.map((b) => (
-              <tr key={b.unitRowId}><td><Link href={`${base}/${b.unitRowId}?asOf=${v.asOf}`}>{b.unitId}</Link></td><td className="num">{formatCents(b.balanceCents)}</td><td>{b.delinquent ? 'delinquent' : 'good standing'}</td></tr>
+              <tr key={b.unitRowId}><td><Link href={`${base}/${b.unitRowId}?asOf=${v.asOf}`}>{b.unitId}</Link></td><td className="num">{formatCents(b.balanceCents)}</td><td><Pill k={b.delinquent ? 'risk' : 'good'}>{b.delinquent ? 'delinquent' : 'good standing'}</Pill></td></tr>
             ))}
           </tbody>
         </table>

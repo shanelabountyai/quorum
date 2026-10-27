@@ -1,19 +1,155 @@
-/* Quorum's one stylesheet. System colours only (Canvas, CanvasText, LinkText, ButtonFace…), so the browser picks a
-   contrast-safe pair in BOTH colour schemes and axe measures the same thing it renders (Bookable A-096: a palette
-   that flips with prefers-color-scheme must be measured in both; this one flips by the UA's own system colours). */
-:root { color-scheme: light dark; }
-body { font-family: system-ui, sans-serif; line-height: 1.45; margin: 0 auto; max-width: 72rem; padding: 0 1rem 3rem; background: Canvas; color: CanvasText; }
-nav { padding: 0.75rem 0; border-bottom: 1px solid CanvasText; margin-bottom: 1rem; }
-table { border-collapse: collapse; margin: 0.5rem 0 1rem; }
-th, td { border: 1px solid CanvasText; padding: 0.25rem 0.5rem; text-align: left; vertical-align: top; }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-code.hash { word-break: break-all; }
-.scope { border: 1px solid CanvasText; padding: 0.25rem 0.75rem; margin: 0.5rem 0 1rem; }
-.limit { font-style: italic; }
-.choice { display: block; }
+/* Quorum's one stylesheet (docs/DESIGN_BRIEF.md, D-56). Tokens first, then plain elements, so template-owned pages
+   look right with zero classes; the few classes after that are for the clone's own pages. Every colour is a token,
+   redefined for prefers-color-scheme: dark, and axe measures both (17 page states x 2 schemes). */
+
+:root {
+  color-scheme: light dark;
+  --bg: oklch(0.972 0.006 80);
+  --sf: oklch(0.995 0.003 80);
+  --ink: oklch(0.25 0.02 30);
+  --mu: oklch(0.45 0.02 30);
+  --ln: oklch(0.84 0.014 70);
+  --ac: oklch(0.44 0.13 25);
+  --acf: oklch(0.99 0.004 80);
+  --sh: 0 1px 2px oklch(0.3 0.03 30 / 0.08);
+
+  /* Status families: bg / fg / dot. good, risk, hold (a tie: the machine stopped, a person decides), info, done. */
+  --good-bg: oklch(0.955 0.04 155); --good-fg: oklch(0.36 0.09 155); --good-dot: oklch(0.55 0.1 155);
+  --risk-bg: oklch(0.955 0.04 28); --risk-fg: oklch(0.38 0.12 28); --risk-dot: oklch(0.55 0.14 28);
+  --hold-bg: oklch(0.955 0.05 80); --hold-fg: oklch(0.38 0.09 70); --hold-dot: oklch(0.58 0.12 75);
+  --info-bg: oklch(0.955 0.02 245); --info-fg: oklch(0.38 0.06 245); --info-dot: oklch(0.55 0.08 245);
+  --done-bg: oklch(0.945 0.006 60); --done-fg: oklch(0.4 0.01 60); --done-dot: oklch(0.6 0.01 60);
+
+  --r-control: 8px;
+  --r-card: 12px;
+  --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --serif: ui-serif, Georgia, 'Times New Roman', serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: oklch(0.19 0.01 30);
+    --sf: oklch(0.225 0.01 30);
+    --ink: oklch(0.93 0.008 80);
+    --mu: oklch(0.76 0.012 80);
+    --ln: oklch(0.38 0.012 30);
+    --ac: oklch(0.8 0.1 30);
+    --acf: oklch(0.2 0.01 30);
+    --sh: 0 1px 2px #0006;
+    --good-bg: oklch(0.31 0.05 155); --good-fg: oklch(0.89 0.08 155); --good-dot: oklch(0.72 0.1 155);
+    --risk-bg: oklch(0.31 0.06 28); --risk-fg: oklch(0.89 0.08 28); --risk-dot: oklch(0.72 0.12 28);
+    --hold-bg: oklch(0.31 0.05 80); --hold-fg: oklch(0.89 0.08 80); --hold-dot: oklch(0.74 0.11 80);
+    --info-bg: oklch(0.31 0.03 245); --info-fg: oklch(0.89 0.04 245); --info-dot: oklch(0.72 0.07 245);
+    --done-bg: oklch(0.29 0.006 60); --done-fg: oklch(0.84 0.008 60); --done-dot: oklch(0.65 0.01 60);
+  }
+}
+
+/* A status family picked by data-k="good|risk|hold|info|done" on any element. */
+[data-k='good'] { --k-bg: var(--good-bg); --k-fg: var(--good-fg); --k-dot: var(--good-dot); }
+[data-k='risk'] { --k-bg: var(--risk-bg); --k-fg: var(--risk-fg); --k-dot: var(--risk-dot); }
+[data-k='hold'] { --k-bg: var(--hold-bg); --k-fg: var(--hold-fg); --k-dot: var(--hold-dot); }
+[data-k='info'] { --k-bg: var(--info-bg); --k-fg: var(--info-fg); --k-dot: var(--info-dot); }
+[data-k='done'] { --k-bg: var(--done-bg); --k-fg: var(--done-fg); --k-dot: var(--done-dot); }
+
+/* ---- elements ---- */
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 var(--sans); overflow-wrap: anywhere; -webkit-font-smoothing: antialiased; }
+
+main { max-width: 64rem; margin: 0 auto; padding: 20px 16px 56px; display: flex; flex-direction: column; gap: 18px; }
+@media (min-width: 640px) { main { padding: 32px 32px 64px; } }
+
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-family: var(--serif); text-wrap: balance; }
+h1 { font-size: 30px; line-height: 1.17; font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 22px; line-height: 1.25; font-weight: 600; margin-top: 10px; }
+h3 { font-size: 18px; line-height: 1.3; font-weight: 600; }
+ul, ol { margin: 0; padding-left: 22px; }
+li + li { margin-top: 4px; }
+
+a { color: var(--ac); text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 3px solid var(--ac); outline-offset: 2px; border-radius: 4px; }
+
+/* Each contest, and any other <section> inside main, is a card. */
+main > section, main section[aria-labelledby], .card {
+  background: var(--sf); border: 1px solid var(--ln); border-radius: var(--r-card); box-shadow: var(--sh);
+  padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; min-width: 0;
+}
+
+/* Forms. ActionForm (template-owned) renders form > [role=alert|status]? + fieldset. */
+form { display: flex; flex-direction: column; gap: 12px; }
+form > fieldset { display: flex; flex-direction: column; gap: 12px; min-width: 0; align-items: flex-start; border: 0; padding: 0; margin: 0; }
+fieldset { margin: 0; }
+label { display: flex; flex-direction: column; gap: 4px; font-weight: 500; max-width: 100%; }
+.choice { flex-direction: row; align-items: center; gap: 10px; min-height: 44px; font-weight: 400; }
 fieldset.plain { border: 0; margin: 0; padding: 0; }
-fieldset { margin: 0.5rem 0; }
-label { display: inline-block; margin: 0.25rem 0.5rem 0.25rem 0; }
-textarea { width: 100%; font-family: ui-monospace, monospace; }
-[role='alert'] { border: 2px solid CanvasText; padding: 0.25rem 0.5rem; }
-.archived { border: 2px dashed CanvasText; padding: 0.5rem; }
+input, select, textarea {
+  font: inherit; color: var(--ink); background: var(--sf); border: 1px solid var(--mu); border-radius: var(--r-control);
+  min-height: 44px; padding: 0 12px; max-width: 100%;
+}
+textarea { width: 100%; padding: 10px 12px; font-family: var(--mono); font-size: 14px; line-height: 1.4; }
+input[type='checkbox'], input[type='radio'] { width: 20px; height: 20px; min-height: 0; padding: 0; margin: 0; accent-color: var(--ac); flex: none; }
+
+button, .button {
+  font: 600 15px/1.2 var(--sans); min-height: 44px; padding: 0 18px; border-radius: var(--r-control); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; text-decoration: none; align-self: flex-start;
+  background: var(--ac); color: var(--acf); border: 1px solid var(--ac);
+}
+button:disabled { cursor: progress; opacity: 0.7; }
+
+/* Action messages: ActionForm's error and notice. Never colour alone: a glyph leads. */
+[role='alert'], [role='status'] { padding: 12px 14px; border-radius: var(--r-control); font-size: 16px; }
+[role='alert'] { background: var(--risk-bg); color: var(--risk-fg); border: 1px solid var(--risk-dot); }
+[role='alert']::before { content: '▲ '; }
+[role='status'] { background: var(--good-bg); color: var(--good-fg); border: 1px solid var(--good-dot); }
+[role='status']::before { content: '● '; }
+
+details > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; }
+
+/* Tables scroll inside their own box on a phone, never the page. */
+table { border-collapse: collapse; font-variant-numeric: tabular-nums; display: block; overflow-x: auto; max-width: 100%; font-size: 16px; }
+th, td { text-align: left; padding: 8px 14px 8px 0; border-bottom: 1px solid var(--ln); vertical-align: top; }
+th { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mu); font-weight: 600; white-space: nowrap; }
+td.num, th.num { text-align: right; padding-right: 14px; }
+tbody tr:last-child td { border-bottom: 0; }
+
+code, pre { font-family: var(--mono); font-size: 13px; }
+code.hash { word-break: break-all; color: var(--mu); }
+pre { overflow-x: auto; }
+main footer { font-size: 14px; color: var(--mu); }
+
+/* ---- the scope note and the receipt limit: the most visible text on the page ---- */
+
+.scope { background: var(--sf); border: 1px solid var(--ln); border-left: 4px solid var(--ac); border-radius: var(--r-control); padding: 12px 16px; font-size: 16px; }
+.limit { font-style: italic; color: var(--mu); }
+.archived { background: var(--done-bg); color: var(--done-fg); border: 2px dashed var(--done-dot); border-radius: var(--r-control); padding: 12px 16px; }
+
+/* ---- navigation ---- */
+
+.org-nav { background: var(--sf); border-bottom: 1px solid var(--ln); padding: 0 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 0 2px; }
+.org-nav .wordmark { font: 600 20px/1 var(--serif); color: var(--ink); text-decoration: none; padding-right: 12px; margin-right: 6px; min-height: 48px; display: inline-flex; align-items: center; gap: 8px; }
+.org-nav .wordmark::before { content: ''; width: 12px; height: 12px; border-radius: 50%; background: var(--ac); }
+.org-nav .assoc { font-size: 14px; color: var(--mu); font-weight: 600; flex-basis: 100%; padding-top: 8px; order: -1; }
+.org-nav a:not(.wordmark) { display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px; color: var(--ink); text-decoration: none; font-size: 15px; font-weight: 500; }
+.org-nav a[aria-current='page'] { font-weight: 700; box-shadow: inset 0 -3px 0 var(--ac); }
+.org-nav .end { margin-left: auto; display: flex; flex-wrap: wrap; }
+@media (min-width: 880px) { .org-nav .assoc { flex-basis: auto; order: 0; padding: 0 12px 0 0; } }
+
+/* ---- pills: a glyph and the word, never colour alone ---- */
+
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; min-height: 26px; border-radius: 999px;
+  font: 600 13px/1 var(--sans); letter-spacing: 0.02em; white-space: nowrap; vertical-align: middle;
+  background: var(--k-bg); color: var(--k-fg); border: 1px solid var(--k-dot);
+}
+.pill[data-k='good']::before { content: '✓'; }
+.pill[data-k='risk']::before { content: '✕'; }
+.pill[data-k='hold']::before { content: '◆'; }
+.pill[data-k='info']::before { content: '●'; }
+.pill[data-k='done']::before { content: '■'; }
+
+.outcome { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.receipt { background: var(--sf); border: 1px solid var(--ln); border-radius: var(--r-control); padding: 12px 14px; font-family: var(--mono); font-size: 13px; word-break: break-all; }
