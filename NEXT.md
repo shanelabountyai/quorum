@@ -1,166 +1,71 @@
 # NEXT
 
-## ▶ v1.3.0 released 2026-10-14 (model: Opus — permissions)
+## ▶ Quorum is closed (2026-10-27). Nothing outstanding for the agent.
 
-✅ **Good to clear.** `scorekeeper` role + `results.write` (D-21), a `security:` release for two INV-22/INV-28 latent defects
-the new role exposed. 172 tests pass (4 new), lint and typecheck clean; e2e and `check-modules` run in CI on the push and tag.
-Bracketry merged it the same day for L-040. **Every other clone owes v1.3.0 by 2026-10-21** (with v1.2.1, due 10-20), each in
-its own session.
+All four closure items exist: `docs/DEMO.md`, brief https://claude.ai/artifact/WeXdqKB6ix8t1e4jhoo7bF (public, links labintelligence.co), LinkedIn #129 and #130 in the Ledger https://claude.ai/artifact/Ai5xKScgT2sWtqXRQ1ZA8i (Quorum filter chip added), cost review ($0 by absence). Spare angles if more posts are wanted: D-47 (76 cents, overlaps #108), D-40 (ID space exhausted in its own test).
 
-## ▶ Next session here: talk4me is next in the older queue if picked up; storage SEC-01/02 runs in its own folder (Opus, money)
+Still open for Shane: add two screenshots to the brief once a capture exists; PR #1 stays unmerged; `docs/CLOSEOUT.md` § By hand.
 
-✅ **Good to clear.** **`v1.2.1` released and pushed 2026-10-13** (model: Opus — `security:` release). Four fixes from the
-2026-10-12 review, each with a red-first test: stale invites (`e47af9a`), the email-change oracle (`71b5fd8`), demo sessions
-(`2cc20a8`), and the owner's 2026-10-13 decision that a demo session also cannot create an org or use billing (`4cae624`).
-168 tests pass, typecheck and lint clean. No schema change. **Every clone owes this within 7 days (due 2026-10-20)**, each in
-its own session; `CLONES.md` rows stay as they are until each merges. Not run locally: `foundation:check-modules` and the
-e2e sweep (both build) — CI runs them on the push and on the tag.
+**2026-10-26 (fourth session, on the Mac, Shane present) — closeout part 1.**
+- Port **6200**, not 7200 (D-54): `package.json`, `playwright.config.ts`, `ci.yml`, README, CLAUDE.md; row added to the port table in `~/.claude/CLAUDE.md` (next free now 6300).
+- Reuse scan re-run (D-55): no other project has ballots/Merkle/quorum; Adjuster's canonical JSON would have broken the oracle on non-ASCII (`JSON.stringify` vs `ensure_ascii`), so writing it fresh was right.
+- Stale pre-D-26 counts fixed (PRD "fifteen", overlap 26/15 and 87/120, 51/120, D-15).
+- `docs/DEMO.md`: three acts. Every command was run once on a fresh `quorum` database. The browser acts were driven headless against :6200 with a throwaway Playwright walk, since deleted: roster 120/124/138/141/2627, 49 proxies, desk + homeowner receipts, DUPLICATE_UNIT, close → recount equals, receipt IN THE ROOT, dues ROUNDING $0.76, V-2026-001 fine on B-203 ($468.50), 6 notices queued / 0 sent, delete refused. Act 1: `tally:eval` 0 diffs, `fixtures:check` OK, `tally:lint` OK, `tally:verify` in/not-in, `tally:recount` 45/0/1 and the tampered file exits 1 naming R1, `tally:eval:db` equals, `BallotSecret` permission denied, `Ballot` DELETE refused (D-19).
+- Found: a member opening an owner-only page gets HTTP 500 (template `requireOrg` throws; upstream). The violation form needs a reload between steps. npm 11 skips `postinstall` (`npx prisma generate` by hand). All three are in DEMO.md.
+- Not run this session: `npm test`, e2e, CI (code changes were the port only; CI runs on push).
+- Left uncommitted on purpose: `next dev` appended a "nextjs-agent-rules" block to CLAUDE.md. Commit or discard it as you prefer.
 
-**Older checkpoint (superseded above):** **F-03 done and pushed 2026-09-28, tagged `v1.2.0`** (model: Sonnet — spec-following tooling, no new
-logic). A clone declares a module required in the clone-owned `src/app/required-modules.ts`; `foundation:check-modules`
-(`scripts/foundation-modules.ts`'s new `modulesToRemove()`) leaves that module in place and still removes the rest. 3 new
-unit tests (157 total pass), the filter mutation-checked red (dropped it, confirmed the test failed, restored). Verified
-for real, not just unit-tested: ran `foundation:check-modules` once with `notifications` required — passed with only
-billing removed and `notifications` left in place — and once with the template's default (nothing required) to confirm
-the existing CI job is unchanged. **Also fixed in passing:** `FOUNDATION_VERSION` was still `v1.1.0` — the `v1.1.1`
-release (`a121708`) never bumped it, a step the release process (`IMPLEMENTATION_PLAN.md` §3.3) requires; a clone created
-between those two commits would have stamped the wrong base version. Now `v1.2.0`, current.
-**Not done, on purpose:** callboard hasn't merged the release yet — that's callboard's own session, per the established
-pattern (it still owes `v1.1.0` and the `security:` `v1.1.1` too, due 2026-10-05). Its `CLONES.md` row stays `v1.0.1`
-until then.
+---
 
-**CI fixed 2026-09-28** (`37cf7c4`, model: Opus — real regression, not a stale-test triage). Root cause: `e2e/billing.spec.ts`
-still injected a cookie named `session` via `context.addCookies`; K1 (`a121708`) had renamed the real cookie to `__Host-session`.
-Fixed to the new name — but Chromium's CDP rejects a `__Host-` cookie set with a plain `http://` `url` field ("Invalid cookie
-fields"), so it's set via `domain: 'localhost', path: '/', secure: true` instead, which Chromium accepts and still sends over
-`http://localhost` (treated as a secure context). Verified: 10/10 e2e, 154/154 unit+integration, lint/typecheck clean, `gh run
-watch` on the push shows green. Clones (tradepost, pulseboard, callboard) can now safely take v1.1.1.
+**2026-10-26 (third build session, unattended, cloud) — owner decisions applied, then Phase 3 tasks 3.1–3.9.**
+- Decisions recorded as owner decisions **D-37..D-43** (O-10, O-11 closed): D-37 `bps_as_of` on the published list; D-38 keep the table-wide REVOKE; D-39 `OwnerLink` written by a trigger on `Invite` acceptance (email match) + the desk path with the operator in `BallotSecret.enteredById`; D-40 random public ballot ids `B-<12 hex>` (fixtures mint from the seed, the write layer from `crypto`; the same-instant id guard is per unit); D-41 `CREDIT` in E-4 + GQ-12; D-42 `quorum_web` LOGIN role (`npm run db:roles`, `docs/deploy-roles.md`); D-43 archive, never delete (`OrgArchive`, `beforeOrgDelete` refuses, trigger second door).
+- **Fixtures regenerated** (D-37 + D-40, one regeneration, seed 20261025, twice → identical): totals/quorum/results unchanged; new hashes in brief §12 (ballots `f0a121ac…`, published `8439d208…`, MANIFEST `59e5d43d…`); root `5214cb0f…35f5d`, meeting commitment `3e6f583c…37e9`. Re-proved before Phase 3: `tally:eval` 0 diffs, `tally:eval:db` 0 diffs (export byte-equal), `tally:recount` 45 match / 0 differ / 1 n/a, GQ-12 green in both languages.
+- Phase 3 built: meetings/vote/desk/results/published.csv, roster, ledger (dues run with ROUNDING, statements, payments, credits, reversals), violations (machine as data), archive, `/associations`, notices queued never sent (cron no longer drains, D-44). Session defaults **D-44..D-53**.
+- **Contradiction found:** the Phase 3 draft's "$35,001 posts a 1-cent ROUNDING line" is 76 cents by hand; 1 cent is $35,000.01 (D-47). A first D-40 guard (meeting-wide re-draw) exhausted its id space in its own test and was replaced one commit later (per-unit guard, interval draw).
 
-✅ **Good to clear.** 6 of 8 LOWs fixed and pushed 2026-09-28 (`a121708`, tagged **`v1.1.1`**, model: Sonnet — `security:` release,
-**clones (tradepost, pulseboard, callboard) owe this within 7 days, by 2026-10-05**). 10 new tests (154 total pass, 1 file:
-`tests/integration/low-2026-09-28.test.ts`), each of the 5 test-covered fixes (K1 x2, K2, K5, K6, K13) mutation-checked red by
-reverting just that source file with the new test in place, confirming failure, then restoring — not just asserted done.
-Typecheck and lint clean.
-- **K1** (`session.ts`, `link.ts`): `signOutEverywhere`/`confirmEmailChange` now also spend the user's other unused sign-in
-  links, atomically with the session/email change. Cookie renamed `session` → `__Host-session`, `Secure` unconditional.
-- **K2** (`totp.ts`): `confirmTotp` now runs `assertFresh` and claims enrolment via a conditional `updateMany` on
-  `totpEnrolledAt: null`, so a concurrent second confirm loses the race instead of also minting 10 more recovery codes.
-- **K5** (`http.ts`): IPv6 rate-limit key now scoped to the address's first 64 bits, not the exact address.
-- **K6** (`orgs.ts`): `removeMember` now revokes that user's active share links in the org, same transaction as the delete.
-- **K13** (`invites.ts`, `links.ts`, `projects/actions.ts`): `addProject`, `createShareLink`, `revokeShareLink`,
-  `revokeInvite` now wrap their write and `audit()` call in one `db.$transaction`. Only `invites.ts` has direct mutation-check
-  coverage in the new test file; `links.ts`/`actions.ts` got the identical pattern, not separately mutation-checked.
-- **Not fixed, deferred on purpose** (see `audit/FOUNDATION-REVIEW-2026-09-26.md` LOW section): K13's `audit_append_only`
-  role separation (needs a second non-owner Postgres role — real infra change, add if the audit log ever needs to survive a
-  compromised app role) and the `.env.example`/drift tooling item (already accepted, documented behavior, D-19d).
-- **Not done, on purpose**: clone upgrade notes for v1.1.1 in tradepost/pulseboard/callboard's own `NEXT.md` — each clone
-  upgrades in its own session, per the established pattern; they're still behind (all at v1.0.1 per `CLONES.md`) and now
-  owe both v1.1.0 and this v1.1.1 `security:` release.
+**Gate output (local, 2026-10-26):** `npm test` 458 passed (52 files); `npm run test:e2e` 15 passed of 15 listed, axe 0 violations on 17 page states × light/dark; `lint` 0 problems; `typecheck` clean; `foundation:drift` clean (modules removed: billing); `tally:eval`, `tally:eval:db`, `fixtures:check`, `tally:lint` OK. CI green on the Phase 3 code head 35d3ab9 (run 40355829930); table below.
 
-**Older checkpoint (superseded above):** FR-09..11 done and pushed 2026-09-28 (`d422d1a`, tagged **`v1.1.0`**, model: Sonnet). 5 new tests (144 total
-pass), each confirmed red against the prior behavior before its fix (patched-to-old-code, ran, restored). Typecheck and lint clean.
-- **FR-09**: `FOUNDATION_PATCHES.md` entries now carry a hash of the excused diff (`` `path` `hash` — reason ``); `foundation:drift`
-  fails again once that path's diff moves on, instead of excusing it forever. Error message prints the hash to paste in.
-- **FR-10**: Billing nav link in `layout.tsx` marked `{/* billing */}` (JSX — a trailing `//` renders as literal text) and added to
-  `MARKED_FILES`. Verified end-to-end: ran `foundation:check-modules` for real, confirmed `/o/[org]/settings/billing` is gone from
-  the build output and drift stays clean.
-- **FR-11**: `new-project` now refuses a port already `in use`/`reserved` in `~/.claude/CLAUDE.md`'s port table (best-effort, skips
-  if the file is unreadable), and refuses a second run once `package.json`'s name is no longer `saas-foundation`.
-- **Not done, on purpose**: clone upgrade notes for v1.1.0 — FR-09..11 is tooling, not a `security:` release, so no 7-day clock;
-  each clone (tradepost, pulseboard, callboard) picks up v1.1.0 whenever it next upgrades, in its own session.
-- **Also not done**: the 8 LOWs from `audit/FOUNDATION-REVIEW-2026-09-26.md` — queued, not urgent, "as time allows."
+**Sandbox this session:** everything ran locally — `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true npx prisma generate`, migrations applied with `psql -f`, and **Playwright with the preinstalled Chromium at `/opt/pw-browsers`** (so e2e and axe ran before every push). Still CI-only: `prisma migrate deploy` / `migrate diff`. axe-core is used from the lockfile (transitive), no dependency added.
 
-**Decided 2026-09-26 (Shane): queue all of it for a fresh session; nothing was changed in code.** Findings, confirmed in source:
-`audit/FOUNDATION-REVIEW-2026-09-26.md` (no HIGH, 11 MED, 8 LOW). Order:
-1. ~~**FR-01 first**~~ **Done 2026-09-27, tagged `v1.0.2`** (lease claim, send outside tx, 15s fetch timeout; 3 new tests, 3 mutations red, 125 pass). Was: outbox sends inside a 5s interactive tx; a slow provider → delivered, not recorded, re-sent every cron run
-   and blocks the queue. Callboard's cron is `*/5`, so this is the live risk. Worth its own patch tag (v1.0.2) if the rest runs long.
-2. ~~FR-02..05~~ **Done 2026-09-27, tagged `v1.0.3`** (`8e4dd35`; 18 mutations red, 133 pass + 10/10 e2e, check-modules green). Clone notes added to each clone's NEXT.md (uncommitted there, beside the v1.0.2 note).
-   Choices: pending-MFA TTL 10 min; wrong-code cap 20/user/UTC day; invite caps 50/sender, 100/org, 5/recipient per day; the cancel hook lives in clone-owned `src/app/org-hooks.ts` (core may not import modules); concurrent pending checkouts still make two subs (ponytail note, logged).
-3. ~~FR-06/07/08~~ **Done 2026-09-28, untagged (CHANGELOG *Unreleased (1.1.0)*)**: `unguardedEntrypoints()` + `// public: <reason>` markers (14 files), glob all of `src/` + inline `'use server'` refused, id-like untagged fields throw (`notRef()` opt-out). 7 mutations red, 139 pass. Tag v1.1.0 after FR-09..11, then add each clone's upgrade note (their NEXT already says v1.1.0 follows).
-4. ~~FR-09/10/11 tooling~~ **Done 2026-09-28, tagged `v1.1.0`** (`d422d1a`). See the checkpoint note above.
-5. ~~LOWs (K1, K2, K5, K6, K13 writes)~~ **6 of 8 done 2026-09-28, tagged `v1.1.1`** (`a121708`). See the checkpoint note above.
-   Remaining 2 are deliberately deferred/no-action, not open work (K13 audit-role separation needs new infra; drift/.env.example
-   item is accepted behavior) — the LOW queue item is closed.
-Clones: tradepost (4200), pulseboard (4500), callboard (4600) — each upgrades in its own session. All three still owe v1.1.0
-*and* v1.1.1 (`security:`, due 2026-10-05) — neither has an upgrade note yet.
+**By hand (Shane):** see `docs/CLOSEOUT.md` §By hand.
 
-**Also done 2026-09-26:** clinic D-32 (group leader writes notes for own group only, `f35252c`) and rental SEC-16 / D-266
-(unrouted inbox portfolio-wide only, `58a0b5b`); CI green in both. Both repos had another session active at the time.
+---
 
-**Decided 2026-09-23: urgent live-security fixes run before foundation M0.** Each one is its own session, run in
-**that project's folder** (one session per project). The details for each are in that repo's *Security findings*
-section and in `audit/<repo>.md` here.
+**2026-10-26 (second build session, unattended, cloud) — Phase 2 done, tasks 2.0–2.11.** Built: `prisma/schema/quorum.prisma` (11 models) + `prisma/migrations/20261026000000_quorum_init/migration.sql` (hand-written: D-8 CHECKs, 6 append-only triggers, the `Meeting` guard, the seal trigger that `REVOKE`s `SELECT` on `BallotSecret` and stamps `sealedAt`, the `quorum_app` role and grants, `quorum_lock_meeting` / `quorum_cast_ballot` / `quorum_close_meeting` as `SECURITY DEFINER`, the billing tables dropped); `src/meetings/` (9 files: `db` — `asApp()` with `SET LOCAL ROLE quorum_app`; `errors` — typed refusals mapped from `meta.driverAdapterError.cause`; `load`, `roster`, `labels`, `cast`, `close` (close + recount), `published`, `eligibility`); `src/tally/tally.ts` gained `resultsFromStored` + `tallyFromResults` (pure; `tally()` now ends in it); `scripts/quorum-load.ts`, `scripts/tally-eval-db.ts`; `tests/meetings/` (6 files, 40 tests) + `tests/tally/stored.test.ts` (5); CI: `prisma migrate diff --from-migrations --to-schema --exit-code` (posts a non-empty diff on the PR), `tally:eval:db`. Decided: D-31..D-36, O-11 (`docs/decisions.md`). Departures from the draft are written into `docs/phase-2-tasks.md` beside the item.
 
-**Session pick 2026-09-25: item 5 (storage SEC-01/02) runs on Opus, in the storage business folder, not here. Foundation has nothing open; safe to /clear.**
+**Gate output (local, Postgres 16, 2026-10-26; CI, Postgres 17, links below):**
+- `npm run tally:eval:db` → 113 ballots through `quorum_cast_ballot`, 87 counted, 26 rejected; closed and sealed; recount from `Ballot` rows equals the stored commitments; 0 differences against `expected_ballots.csv` (unit id excepted — not stored, D-20), `expected_totals.csv`, `expected_results.csv`, `expected_quorum.csv`; published export equals `published_ballots.csv` byte for byte. Root `cbf6767e…65d49`, meeting commitment `a703d58b…037a` — the Phase 1 values.
+- `npm test` → **380 passed, 44 files** (186 engine, 40 meetings, 154 template). `npm run test:engine` → 186. `npm run tally:eval` → 113/87/26, 0 differences. `tally:lint` OK (17 files). `fixtures:check` OK. `foundation:drift` clean (modules removed: billing). `lint` 0 errors (the template's 1 warning). `typecheck` clean — **fully, this time** (see "what the sandbox could run").
+- Tamper proofs: `42501` on `BallotSecret` after close as `quorum_app`; `P0001 "<table> is append-only (D-19)"` on six tables from the client and raw SQL; a flipped `choicesCanonical` with the trigger disabled moves exactly the R1 and meeting commitments and the recount names both.
 
-**2026-09-26: Opus K4 pass done** (`audit/K4-SWEEP-2026-09-26.md`, scorecard v7). Rental K4 ✗ (3 HIGH, confirmed in source), clinic K4 ✗ (1 HIGH),
-alongside ✔, reservations N/A. Rental's Re-check processed: 10/14, not the 14/14 its own NEXT claims (K1, K6, K11 still ✗).
-Storage's Re-check stays queued in the artifact db until its SEC-01/02 edits are committed (they were uncommitted in flight at the time).
-Carried notes moved to `BACKLOG.md` (F-01, F-02). Items 9–10 were fixed the same day (scorecard v8: rental 11/14, clinic 10/14).
+**What the sandbox COULD run this time (changes the Phase 1 record):** `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true npx prisma generate` generates the client without the blocked engine download, so `npm run typecheck` and the whole DB-backed `npm test` ran locally against the sandbox's Postgres 16 (`/usr/lib/postgresql/16`, database `quorum_test`, migrations applied with `psql -v ON_ERROR_STOP=1 -f` in order — the stand-in for `prisma migrate deploy`). `prisma validate` and `prisma format` work the same way. **Still cannot run locally:** `prisma migrate deploy`, `migrate dev --create-only` and `migrate diff` (they need the native schema engine; `binaries.prisma.sh` is 403), so the migration SQL is hand-written and CI's `migrate diff` step is the proof it matches the schema (green on 2b06d27). `test:e2e` not run locally (Playwright browsers not downloaded); CI runs it. CI job logs are on a blob host the proxy refuses, so the `migrate diff` step posts its output as a PR comment on failure (one such comment on PR #1, from the `--shadow-database-url` mistake); check-run annotations are readable via the API.
 
-## Queue (in order)
+**Red runs this session and what fixed them:** 40320715574 (7db5ebb) — `migrate diff` step: `--shadow-database-url` is not a Prisma 7 flag → `SHADOW_DATABASE_URL` env read by `prisma.config.ts` (2b06d27). 40321120165 (eef403d) — same, that push only added the PR-comment channel. Found locally before any push: a file-order replay labelled B-020 wrong → D-36; `sealedAt` could be re-stamped after sealing → the guard requires `OLD.sealedAt IS NULL`; a malformed `castAt` hit the order check before validation → validated first; the `quorum_app` column-level `UPDATE (title)` grant lives in `role_column_grants`, not `role_table_grants`; the seal outlives `TRUNCATE`, so the test reset re-grants (D-33's stated limit, O-11).
 
-1. ~~**clinic: SEC-01 HIGH.**~~ **Live** (verified 2026-09-23): env vars set, pushed (`5f24c71`, in sync with origin),
-   `curl -I https://clinic.labintelligence.co/` returns 401 with a Basic challenge, and the cron route returns 401 with no challenge. gitleaks is clean (196 commits),
-   so `clearpath` was **made public** on 2026-09-23. **Done.**
-2. ~~**event toolkit: SEC-01 HIGH.**~~ Fixed (`2de11b8`); SEC-02 fixed too. **The repo is still blocked from going public:**
-   gitleaks flags a literal Vercel bearer token in `.claude/settings.json` (plus the ` 3`/` 4` copies), commit `b8310aa` (2026-08-14).
-   Shane: revoke that Vercel token. The files are no longer tracked, but they are not gitignored either, so add `.claude/settings*.json` to `.gitignore`. The token stays in history, so revoking it is the real fix.
-   SEC-03/04 (MED) are in progress in that folder (uncommitted edits).
-3. ~~**claude-dashboard: SEC-01 HIGH.**~~ Fixed (`a009fce`, pushed). The server binds to 127.0.0.1 and a LAN connection is refused. SEC-02 and OPS-01 are covered by the same fix. **Done.**
-4. ~~talk4me~~: **deferred to the end of the queue** (Shane, 2026-09-23). See item 8.
-5. **storage business: SEC-01, SEC-02** (webhook re-apply; cross-facility echo). Model: Opus (money). The repo was made private on 2026-09-23 because of these findings; make it public again once both are fixed.
-6. ~~design bridge~~: dead project (the API it needed cost too much), 2026-09-23. The repo stays private. SEC items dropped.
-7. ~~**Foundation M0**~~ **Done** 2026-09-23 (Shane chose to run it before storage). The repo `shanelabountyai/saas-foundation` is **private**.
-   The scaffold is pushed, and spikes S1–S3 all passed (the results are in spec §0). CI is lint + typecheck. Port 4100 is claimed in `~/.claude/CLAUDE.md`.
-   **M1 core platform: done** 2026-09-23 (env/clock/log/db + guard, headers, health, error pages, vitest, prod-build e2e, CI; INV-14, 15 (public + api), 18, 20 green).
-   **M2 Auth: done** 2026-09-23 in one session (est. 2). INV-05/07/09 (scoped to M2), 13, 15 (signed-in), 17, 23, 24, 25, 26 (TOTP) are green,
-   and each was mutation-checked red. The first migrations exist: core, billing and notifications, each separate (D-14d). Build choices are in spec **D-14**.
-   **M3 Tenancy + authz: done** 2026-09-23 in one session (est. 2). INV-01/02/03/04/22 run through the glob harness
-   (`tests/invariants/harness.ts`; six negative controls, and mutation-checked red on real code), plus INV-05 (membership removal),
-   06, 07 (invite), 09 (invite accepts), 19, 21 (including concurrent demotion), 26 (deletion) and 28, all green. D-13 confirmed; build choices are in spec **D-15**.
-   **M4 Share links: done** 2026-09-23. `Project` is the example resource, with `core/share/{links,project}.ts`, `/s/[token]` and `/o/[org]/projects`.
-   INV-07 (share link), 08, 09 (share reads) and 15 (share route) are green, each mutation-checked red (7 mutations). The e2e sweep passed 8/8. Build choices are in spec **D-16**.
-   **M5 Cron + secret hygiene: done** 2026-09-24. `core/cron.ts` (`isAuthorizedCron`: fails closed, `safeEqual`, header only), hourly `/api/cron`
-   (also sweeps `RateLimit` rows older than a day), `CRON_SECRET` in env + `.env.example`, `vercel.json` cron. INV-10/11/16 green, 5 mutations red. 84 unit/integration tests pass.
-   **M6 Billing: done** 2026-09-24. `modules/billing/{provider,webhook}.ts`, `/api/webhooks/stripe`, `/o/[org]/settings/billing` (+ nav link),
-   mock provider when no key. INV-12 green (13 tests, 8 mutations red, including the SB "any row = duplicate" bug and a dropped row lock).
-   98 unit/integration + 9/9 e2e. **Found and fixed a defect present since M1**: Prisma writes were stored 5–6h off in a non-UTC Postgres zone (D-17g).
-   Build choices are in spec **D-17**.
-   **M7 Notifications: done** 2026-09-24. `modules/notifications/{outbox,sms,templates}.ts`, drain + 7-day sweep in `/api/cron`, Twilio/SMS env keys.
-   11 new tests (109 total pass), 4 drain mutations red (no row lock, no backoff, no attempt cap, no sentAt filter). Build choices are in spec **D-18**.
-   **M8 Demo, clone tooling, release: done** 2026-09-25. `/demo` + `seed:demo` (INV-27, 3 mutations red), `new-project`, `db:setup`, `foundation:drift|status|check-modules`
-   (CI job `modules-removed`), README, legal stubs, CHANGELOG, CLONES. 122 tests + 10/10 e2e. **Tagged `v1.0.0`, then `v1.0.1`** (the acceptance run found the README's
-   `git checkout -b main` fails in a fresh clone; a pushed tag is not moved, so the fix is a patch release). Clone from **v1.0.1**. Acceptance run from a clean clone:
-   install to a working `/demo` sign-in took about 10s warm-cache (limit 30 min; not measured cold). Build choices in spec **D-19**.
-   **M9 scorecard: done** 2026-09-25, artifact https://claude.ai/artifact/TognMvisj8T9GNQGtE9MbJ. Foundation row all ✔ (122 tests). All rows re-scored 2026-09-25 by Sonnet agents (audit/rescore/*.json; design bridge stays baseline). K3/K4 spot-checks flagged; the Opus K3/K4 pass has not run. Per-project Re-check buttons queue requests in the artifact db (docs checks/<project-id>); process them by reading with ArtifactData, re-running that project's scorer, then writing doneAt + summary back.
-   **Clinic K11/OPS-04 cleanup landed 2026-09-25** (`clinic` a2e07eb: zod env schema, OPS-04 was already satisfied). Clinic is now 10/14. `audit/scorecard.json` and `build-scorecard.py` are updated and committed, but the artifact was republished (v5) with clinic at 10/14. **Next: storage (item 5)**, then talk4me. Earlier: storage (item 5) and talk4me (item 8).
-   - Not built, on purpose: `scripts/seed.ts`, `scripts/drain-outbox.ts` (nothing needs them).
-   - Shane, optional: to try real Stripe test mode, set `STRIPE_SECRET_KEY` (sk_test_), `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` in `.env.local`
-     and forward with `stripe listen --forward-to localhost:4100/api/webhooks/stripe`. Not needed for M7.
-   - Carried notes: an audit-log viewer (`audit.read`) and `/o/[org]/settings/security` are not built. Neither is in any milestone yet, so add them to `BACKLOG.md` if wanted.
-   - The harness takes ~2.5s on an idle machine and ~80s under a sibling project's sweep (load 45). That is CPU contention, not a hang.
-8. **talk4me: SEC-01 HIGH** (deferred here from item 4 on 2026-09-23). Cap `api/tts.ts` at about 500 chars, allowlist voice ids,
-   add a Vercel Firewall rule. Model: Sonnet. After it is fixed, make the `talk4me` repo public.
-9. ~~**rental business: K4-R1/R2/R3 HIGH**~~ **Fixed 2026-09-26** (`6d75d45`, SEC-09–15, CI green). Open in that repo: SEC-16 (unrouted inbox, a design
-   question for Shane), the K4 LOWs, and K1/K6/K11 (tenant sign-out not server-side, same-origin referrer + no no-store on token pages, env schema covers 6 vars).
-10. ~~**clinic: K4-C1 HIGH**~~ **Fixed 2026-09-26** (`8c060a5`, SEC-07–11). Also fixed: clinic CI had been red at `npm ci` since SEC-06 (`b72b1f3`, 09-23) —
-   `a4d11ba` — which hid a date-rotted e2e spec, fixed in `62d7f1c`; CI green. Open in that repo: whether a group leader may write notes for attendees
-   they don't treat (Shane), and two LOWs (forms for any client; not-found vs forbidden oracle).
+**By hand (Shane):** review PR #1; decide O-11 and item 3.0 of `docs/phase-3-tasks.md`; delete the throwaway branch `ci-proof-1-14` on origin; `git push origin v1.3.0` from the Mac so the tag shim in `ci.yml` can go; the port-table row (quorum → 7200) in `~/.claude/CLAUDE.md`; re-run `reuse-scan.py`; fix the stale pre-D-26 numbers (PRD, `docs/portfolio-overlap.md`, D-15); the deployment role for `quorum_app` (D-33) when a database beyond the laptop exists; build-log card #21. Optional: delete the one `migrate diff` PR comment.
 
-**Shane-only, no code (still to do):**
-- Revoke the Vercel token leaked in event-toolkit history (`b8310aa`, `.claude/settings.json`). This blocks making the repo public.
-- ElevenLabs spend cap (talk4me).
-- Rotate or remove the live Anthropic key and Neon credentials in `use-case-support-ticket-deflection/.env.local`.
+---
 
-## Where things are
-- Spec (APPROVED v2): `FOUNDATION_SPEC.md`. Plan (APPROVED, M0–M9): `IMPLEMENTATION_PLAN.md`. Both were revised on 2026-09-23 after a Codex review (D-10 to D-12, INV-28, tighter S1–S3), and the revision is approved.
-- Portfolio audit baseline for the M9 scorecard: `audit/` (17 reports on the K1–K14 checklist).
-- SEC items were appended (uncommitted, for each repo's own session to commit) to:
-  - storage, Bookable and rental: `docs/prds/06-backlog.md`
-  - Countertop and reservations: `docs/backlog.md`
-  - clinic, groundwork and talk4me: `NEXT.md`
-  - alongside: `BACKLOG.md`
-  - showcall: `docs/backlog.md`
-  - event toolkit, design bridge, claude-dashboard and the three use-case repos: `SECURITY_BACKLOG.md`
-  - Use-Case Studio: its backlog file
+**2026-10-26 (first build session, unattended, cloud):** Phase 1 tasks 1.1–1.14 done. Built: `src/tally/` (17 files), `scripts/tally-{lint,eval,verify,recount,fixtures}.ts`, `tests/tally/` (7 files, 181 tests), `docs/EVAL.md`, `docs/phase-1-plan.md`, decisions D-27..D-30 and O-10, CI gate, billing removed by manifest (D-27 c). Gate then: `tally:eval` 113/87/26, 0 differences; `test:engine` 181; `tally:lint` OK; `fixtures:check` OK; `tally:recount` 29 match / 0 differ / 6 not recomputable (D-28); `foundation:drift` clean. Could not run then (now partly can, see above): `npm ci` postinstall (`prisma generate`, 403 on `binaries.prisma.sh`), the DB half of `npm test`, `db:setup`, `test:e2e`, `foundation:check-modules`.
+
+**2026-10-25 (kickoff kit):** PRD v1.0, decisions D-1..D-26 + O-2..O-9, domain brief, golden cases GT-01..GT-21 and GQ-01..GQ-11, Phase 1 tasks, CLAUDE.md, KICKOFF.md, `tools/` oracles, frozen fixtures (seed 20261025; hashes in brief §12). Kickoff measurements: 113 received, 87 counted (51 direct + 36 proxy), 26 rejected over 15 codes; quorum 87/120 MET, direct-only 51/120 NOT MET; E1 weighted elects C-02, C-04, C-05 (units would elect C-01, C-02, C-04); E2 TIE_UNRESOLVED C-13/C-14; R1 PASSED; R2, R3, R4 FAILED under their bases. Meeting commitment `a703d58b…037a`. These are the oracle's answers to the generator's own defects (D-24).
+
+## CI runs
+
+| When | Commit | Run | Result |
+|---|---|---|---|
+| 2026-10-26 | 924ad85 (kit) | https://github.com/shanelabountyai/quorum/actions/runs/40258284168 | green |
+| 2026-10-26 | e9714fe (Phase 1 engine) | https://github.com/shanelabountyai/quorum/actions/runs/40260974830 | **red** — `foundation:drift`: no `v1.3.0` tag on a shallow checkout; fixed in 1755c14/7a3520a |
+| 2026-10-26 | 7a3520a | https://github.com/shanelabountyai/quorum/actions/runs/40261257481 | **green** |
+| 2026-10-26 | 2a9de88 (Phase 1 head) | https://github.com/shanelabountyai/quorum/actions/runs/40262028224 | **green** |
+| 2026-10-26 | d42a1c8 on `ci-proof-1-14` (one edited total) | https://github.com/shanelabountyai/quorum/actions/runs/40261860620 | **red** on `tally:eval`, as task 1.14 requires |
+| 2026-10-26 | 7db5ebb (2.1 schema + migration) | https://github.com/shanelabountyai/quorum/actions/runs/40320715574 | **red** — `migrate diff`: `--shadow-database-url` is not a Prisma 7 flag (everything before it green, `migrate deploy` included) |
+| 2026-10-26 | eef403d (PR-comment channel) | https://github.com/shanelabountyai/quorum/actions/runs/40321120165 | **red** — same step; its output reached PR #1 as a comment |
+| 2026-10-26 | 2b06d27 (`SHADOW_DATABASE_URL`) | https://github.com/shanelabountyai/quorum/actions/runs/40321741300 | **green** — `migrate diff` empty: the hand-written migration equals the schema; schema/enum/append-only/role tests green on Postgres 17 |
+| 2026-10-26 | 9dae511 (2.3–2.9: load, cast, close, recount, tamper, eval:db, eligibility — the Phase 2 code head) | https://github.com/shanelabountyai/quorum/actions/runs/40322626626 | **green** — `tally:eval:db` 113/87/26, 0 differences; 380 tests; e2e; `migrate diff` empty. The docs commit after it is skipped by `paths-ignore` |
+| 2026-10-26 | 94c9e22 (decisions pass: D-37/D-40/D-41, regenerated fixtures) | https://github.com/shanelabountyai/quorum/actions/runs/40345975273 | **green** |
+| 2026-10-26 | 0e17929 (D-39/D-42/D-43 schema, roles) | https://github.com/shanelabountyai/quorum/actions/runs/40348272725 | **green** — `migrate diff` empty |
+| 2026-10-26 | 98e85f6 (Phase 3 3.1–3.7) | https://github.com/shanelabountyai/quorum/actions/runs/40353005303 | **red** — `playwright test`: the template's `onboarding.spec.ts` expected the template's empty org home, which 3.1 replaced; fixed in 35d3ab9 |
+
+| 2026-10-26 | 35d3ab9 (3.8 e2e + axe, onboarding fix — the Phase 3 code head) | https://github.com/shanelabountyai/quorum/actions/runs/40355829930 | **green** — lint, typecheck, drift, tally:eval, fixtures:check, migrate deploy + diff, tally:eval:db, vitest, 15 e2e with axe; modules-removed green |
+| 2026-10-26 | 888d79f (port 6200, D-54; DEMO.md) | https://github.com/shanelabountyai/quorum/actions/runs/40373887534 | **green** — e2e on 6200 |

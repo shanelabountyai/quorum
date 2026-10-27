@@ -1,0 +1,19 @@
+/* Quorum's one stylesheet. System colours only (Canvas, CanvasText, LinkText, ButtonFace…), so the browser picks a
+   contrast-safe pair in BOTH colour schemes and axe measures the same thing it renders (Bookable A-096: a palette
+   that flips with prefers-color-scheme must be measured in both; this one flips by the UA's own system colours). */
+:root { color-scheme: light dark; }
+body { font-family: system-ui, sans-serif; line-height: 1.45; margin: 0 auto; max-width: 72rem; padding: 0 1rem 3rem; background: Canvas; color: CanvasText; }
+nav { padding: 0.75rem 0; border-bottom: 1px solid CanvasText; margin-bottom: 1rem; }
+table { border-collapse: collapse; margin: 0.5rem 0 1rem; }
+th, td { border: 1px solid CanvasText; padding: 0.25rem 0.5rem; text-align: left; vertical-align: top; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+code.hash { word-break: break-all; }
+.scope { border: 1px solid CanvasText; padding: 0.25rem 0.75rem; margin: 0.5rem 0 1rem; }
+.limit { font-style: italic; }
+.choice { display: block; }
+fieldset.plain { border: 0; margin: 0; padding: 0; }
+fieldset { margin: 0.5rem 0; }
+label { display: inline-block; margin: 0.25rem 0.5rem 0.25rem 0; }
+textarea { width: 100%; font-family: ui-monospace, monospace; }
+[role='alert'] { border: 2px solid CanvasText; padding: 0.25rem 0.5rem; }
+.archived { border: 2px dashed CanvasText; padding: 0.5rem; }

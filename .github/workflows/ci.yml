@@ -4,13 +4,25 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+    # Docs-only pushes cost Actions minutes and test nothing (Gavel's CI, 2026-10-19).
+    paths-ignore: ['docs/**', '**.md']
   pull_request:
+    paths-ignore: ['docs/**', '**.md']
+
+# A newer push supersedes a running one; no point finishing the old run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write # the migrate-diff step comments on the PR when the history and the schema differ
 
 jobs:
   ci:
     runs-on: ubuntu-latest
     env:
-      # Ephemeral runner-local Postgres, gone when the job ends.
+      # Ephemeral runner-local Postgres, gone when the job ends. Nothing here is a secret.
       PGHOST: localhost
       PGUSER: postgres
       PGPASSWORD: postgres
@@ -18,6 +30,9 @@ jobs:
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/quorum_test?connection_limit=10&pool_timeout=20
       AUTH_SECRET: ci-only-secret-not-for-real-use-0123456789abc
       APP_URL: http://localhost:6200
+      # D-8: the engine compares calendar strings and must give the same answer in any process zone. A UTC-only
+      # runner would hide exactly the bug the string axis exists to prevent, so the whole job runs in Chicago.
+      TZ: America/Chicago
     services:
       postgres:
         image: postgres:17
@@ -33,6 +48,9 @@ jobs:
           --health-retries=5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # foundation:drift diffs against the v1.3.0 tag, which a shallow checkout does not have
+          fetch-tags: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -40,14 +58,47 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      # origin carries no tags (the cloud session's proxy refuses tag pushes, 403); until Shane pushes v1.3.0 from the
+      # Mac, name the release commit by its message so drift has its base. Fails loudly if the commit is not found.
+      - run: |
+          v="$(cat FOUNDATION_VERSION)"
+          git rev-parse -q --verify "refs/tags/$v" >/dev/null || git tag "$v" "$(git log --all --grep="^Release $v:" --format=%H -n 1)"
+          git rev-parse -q --verify "refs/tags/$v^{commit}" >/dev/null
+      - run: npm run foundation:drift
+      # Phase 1 gate (docs/phase-1-tasks.md 1.14): the frozen fixtures, the pure engine, the oracle agreement.
+      # fixtures:check runs AFTER tally:eval so a product-code write into fixtures/ fails the run (task 1.2).
+      - run: npm run tally:lint
+      - run: npm run tally:eval
+      - run: npm run fixtures:check
       - run: createdb quorum_test
       - run: npx prisma migrate deploy
+      # Phase 2: the migrations are hand-written (the sandbox cannot run `migrate dev`), so prove the migration
+      # history and prisma/schema agree — any column, index, FK or type the SQL got wrong fails here, not in a test.
+      # The run logs sit on a blob host the cloud session's proxy refuses, so a non-empty diff is also posted on the
+      # PR as a comment (the only channel the unattended session can read); the step still fails.
+      - run: |
+          createdb quorum_shadow
+          set +e
+          npx prisma migrate diff --from-migrations prisma/migrations --to-schema prisma/schema --exit-code --script > migrate-diff.txt 2>&1
+          rc=$?
+          cat migrate-diff.txt
+          if [ "$rc" -ne 0 ] && [ -n "${{ github.event.pull_request.number }}" ]; then
+            { echo "**migrations vs schema differ** (\`prisma migrate diff\` exit $rc on ${{ github.sha }}):"; echo; echo '```sql'; cat migrate-diff.txt; echo '```'; } > comment.md
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md || true
+          fi
+          exit $rc
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/quorum_shadow # prisma.config.ts reads it (Prisma 7 has no --shadow-database-url flag)
+      # Phase 2 gate (docs/phase-2-tasks.md 2.9): the same 113 ballots through the cast path, close, the recount from
+      # Ballot rows, diffed against the same expected files; then the whole suite, tamper tests included.
+      - run: npm run tally:eval:db
       - run: npx vitest run
       # Production build, served — the way it ships. login.spec.ts drives a real page.
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
 
-  # Spec §4 / §13.3: both modules deleted by the manifest, and the tree must still generate, typecheck, build and pass drift.
+  # Spec §4 / §13.3: the remaining module deleted by the manifest, and the tree must still generate, typecheck, build and pass drift.
   modules-removed:
     runs-on: ubuntu-latest
     steps:

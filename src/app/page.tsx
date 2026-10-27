@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic'; // reads DEMO_MODE per request, never ba
 export default function Home() {
   return (
     <main>
-      <h1>SaaS Foundation</h1>
+      <h1>Quorum</h1>
+      <p>HOA governance with a verifiable tally. Learning project, synthetic data only.</p>
       <Link href="/login">Sign in</Link>
       {demoEnabled() && <> · <Link href="/demo">Demo accounts</Link></>}
       <footer>

@@ -1,0 +1,9 @@
+field,value
+basis,UNITS
+threshold_bps,5000
+units_represented,87
+total_units,120
+units_met,True
+bps_represented,7232
+total_bps,10000
+weighted_met,True

@@ -1,0 +1,99 @@
+{
+  "contests": [
+    {
+      "candidates": [
+        {
+          "id": "C-01",
+          "name": "Maren Lindqvist"
+        },
+        {
+          "id": "C-02",
+          "name": "Emeka Obuya"
+        },
+        {
+          "id": "C-03",
+          "name": "Rosa Quintero"
+        },
+        {
+          "id": "C-04",
+          "name": "Tobias Grunwald"
+        },
+        {
+          "id": "C-05",
+          "name": "Hana Iwata"
+        }
+      ],
+      "contest_id": "E1",
+      "kind": "ELECTION",
+      "mode": "WEIGHTED",
+      "seats": 3,
+      "title": "Board of Directors"
+    },
+    {
+      "candidates": [
+        {
+          "id": "C-11",
+          "name": "Soren Rasmussen"
+        },
+        {
+          "id": "C-12",
+          "name": "Priya Sandoval"
+        },
+        {
+          "id": "C-13",
+          "name": "Wendell Fairweather"
+        },
+        {
+          "id": "C-14",
+          "name": "Delphine Moreau"
+        }
+      ],
+      "contest_id": "E2",
+      "kind": "ELECTION",
+      "mode": "UNITS",
+      "seats": 2,
+      "title": "Reserve Study Committee"
+    },
+    {
+      "basis": "MAJORITY_OF_VOTES_CAST",
+      "contest_id": "R1",
+      "kind": "RESOLUTION",
+      "title": "Approve the 2027 operating budget ($420,000)"
+    },
+    {
+      "basis": "TWO_THIRDS_OF_ALL_WEIGHTED_SHARES",
+      "contest_id": "R2",
+      "kind": "RESOLUTION",
+      "title": "Special assessment of $180,000 for roof replacement"
+    },
+    {
+      "basis": "MAJORITY_OF_ALL_UNITS",
+      "contest_id": "R3",
+      "kind": "RESOLUTION",
+      "title": "Amend bylaws \u00a79.2: minimum lease term 30 days"
+    },
+    {
+      "basis": "MAJORITY_OF_UNITS_REPRESENTED",
+      "contest_id": "R4",
+      "kind": "RESOLUTION",
+      "title": "Adopt the two-pet limit policy"
+    }
+  ],
+  "meeting_id": "AM-2026",
+  "rules": {
+    "close_at": "2026-11-14T19:00:00",
+    "delinquency_suspends_voting": true,
+    "duplicate_unit_rule": "FIRST_VALID_CAST_WINS",
+    "open_at": "2026-11-01T09:00:00",
+    "proxy_holder_must_be_member": true,
+    "proxy_max_depth": 1,
+    "quorum": {
+      "basis": "UNITS",
+      "threshold_bps": 5000
+    },
+    "record_date": "2026-11-14",
+    "timezone_label": "America/Chicago",
+    "total_share_bps": 10000
+  },
+  "title": "Larkspur Commons Condominium Association \u2014 2026 Annual Meeting"
+}

@@ -1,0 +1,9 @@
+unit_id,unit_type,building,floor
+A-101,STUDIO,A,1
+A-102,1BR,A,1
+A-103,2BR,A,1
+A-104,3BR,A,1
+A-105,1BR,A,1
+A-106,2BR,A,1
+A-107,STUDIO,A,1
+A-108,2BR,A,1
