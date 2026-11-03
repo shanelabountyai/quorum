@@ -1,6 +1,10 @@
 # NEXT
 
-## ▶ Quorum is closed (2026-10-27). Nothing outstanding for the agent.
+## ▶ 2026-11-03: foundation v1.4.0 merged on branch `foundation-v1.4.0`, PR #3 open (needs CI green + Shane's merge)
+
+Carries v1.3.1 (`security:`, `next` 16.3.8). `filterListedOrgs` hides archived orgs on `/onboarding` and `/demo` (D-58, closes D-52's seam). Local gate: `npm test` 494/494, lint/typecheck clean, `foundation:drift` clean vs v1.4.0, `tally:eval` / `tally:eval:db` 0 differences, `fixtures:check` / `tally:lint` OK. e2e left to CI. `CLONES.md` row → v1.4.0 here and in saas foundation.
+
+## Quorum is closed (2026-10-27). Nothing outstanding for the agent.
 
 All four closure items exist: `docs/DEMO.md`, brief https://claude.ai/artifact/WeXdqKB6ix8t1e4jhoo7bF (public, links labintelligence.co), LinkedIn #129 and #130 in the Ledger https://claude.ai/artifact/Ai5xKScgT2sWtqXRQ1ZA8i (Quorum filter chip added), cost review ($0 by absence). Spare angles if more posts are wanted: D-47 (76 cents, overlaps #108), D-40 (ID space exhausted in its own test).
 
