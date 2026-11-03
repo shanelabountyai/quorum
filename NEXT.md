@@ -1,10 +1,14 @@
 # NEXT
 
-## ▶ Quorum is closed (2026-10-27). Nothing outstanding for the agent.
+## ▶ 2026-11-03: foundation v1.4.0 merged on branch `foundation-v1.4.0`, PR #3 open, CI green (run 41728390522 on 5f76787, e2e included); needs Shane's merge
+
+Carries v1.3.1 (`security:`, `next` 16.3.8). `filterListedOrgs` hides archived orgs on `/onboarding` and `/demo` (D-58, closes D-52's seam). Local gate: `npm test` 494/494, lint/typecheck clean, `foundation:drift` clean vs v1.4.0, `tally:eval` / `tally:eval:db` 0 differences, `fixtures:check` / `tally:lint` OK. e2e left to CI. `CLONES.md` row → v1.4.0 here and in saas foundation.
+
+## Quorum is closed (2026-10-27). Nothing outstanding for the agent.
 
 All four closure items exist: `docs/DEMO.md`, brief https://claude.ai/artifact/WeXdqKB6ix8t1e4jhoo7bF (public, links labintelligence.co), LinkedIn #129 and #130 in the Ledger https://claude.ai/artifact/Ai5xKScgT2sWtqXRQ1ZA8i (Quorum filter chip added), cost review ($0 by absence). Spare angles if more posts are wanted: D-47 (76 cents, overlaps #108), D-40 (ID space exhausted in its own test).
 
-Still open for Shane: add two screenshots to the brief once a capture exists; PR #1 stays unmerged; `docs/CLOSEOUT.md` § By hand.
+Full design system (D-57): `docs/DESIGN_SYSTEM.md`, `/o/<org>/design`, `src/components/ui.tsx`, `tools/contrast.py`; applied to every clone page, e2e 15/15 with axe. Exec brief v5 (2026-10-27) shows three screenshots of the new design and mentions the system (40/40 contrast, axe on 18 states). Design brief `docs/DESIGN_BRIEF.md` (D-56, ee4505d). Brief (v4) carries two results screenshots of the styled app and a reworded "screens are plain" caveat (2026-10-27, 113-ballot meeting via `dev:test`; capture script throwaway). Not styled yet: meeting detail and violations pills; receipt-check notice is green for both outcomes. PR #1 merged 2026-10-27 on Shane's say-so. Still open for Shane: `docs/CLOSEOUT.md` § By hand.
 
 **2026-10-26 (fourth session, on the Mac, Shane present) — closeout part 1.**
 - Port **6200**, not 7200 (D-54): `package.json`, `playwright.config.ts`, `ci.yml`, README, CLAUDE.md; row added to the port table in `~/.claude/CLAUDE.md` (next free now 6300).

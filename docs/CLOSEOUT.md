@@ -21,7 +21,7 @@ Coercion resistance and receipt-freeness (a voter who shows receipt and nonce pr
 
 Done on the Mac, 2026-10-26: port moved to 6200 and the port-table row added (D-54); `reuse-scan.py` re-run (D-55, closes D-27 a); stale pre-D-26 counts fixed in the PRD, `docs/portfolio-overlap.md` and D-15; `docs/DEMO.md` written, with every command run once against a fresh database.
 
-1. Review PR #1; decide whether to merge.
+1. ~~Review PR #1~~ merged 2026-10-27.
 2. `git push origin v1.3.0` (fetch the tag from the `template` remote first; it is not in this clone) so the tag shim in `ci.yml` can go; delete the throwaway branch `ci-proof-1-14` on origin.
 3. Add the quorum row (6200) to `saas-foundation/CLONES.md`: the local checkout has none (D-54).
 4. When a database beyond the laptop exists: `npm run db:roles` and point the runtime `DATABASE_URL` at `quorum_web` (`docs/deploy-roles.md`); nothing is deployed.
@@ -32,7 +32,7 @@ Done on the Mac, 2026-10-26: port moved to 6200 and the port-table row added (D-
 ## Still to do for closure (house definition of done)
 
 - [x] `docs/DEMO.md`
-- [x] Exec brief, *Quorum in Brief*: https://claude.ai/artifact/WeXdqKB6ix8t1e4jhoo7bF (public link since 2026-10-27, links labintelligence.co; no screenshots yet, the project has no capture spec)
+- [x] Exec brief, *Quorum in Brief*: https://claude.ai/artifact/WeXdqKB6ix8t1e4jhoo7bF (public link since 2026-10-27, links labintelligence.co; two results screenshots added 2026-10-27)
 - [x] LinkedIn drafts in the Ledger (2026-10-27): #129 Impact "same vote passed 40 to 39, and failed" and #130 Scale "proxy, then voted in person", both tagged `quorum`, https://claude.ai/artifact/Ai5xKScgT2sWtqXRQ1ZA8i. Held back as spare angles: D-47 76 cents (overlaps #108), D-40 ID-space exhaustion. E2 tie dropped (duplicates #115)
 - [x] Cost review (2026-10-27; no Vercel or Neon project is linked locally, `.vercel` absent, not checked against the accounts):
   - Vercel project / auto-deploy per push: **off** (none exists). Restore: create the project only for a deployment; `vercel.json` already carries the `ignoreCommand`.

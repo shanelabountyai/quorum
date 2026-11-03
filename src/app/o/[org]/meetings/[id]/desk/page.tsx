@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { MeetingTabs, PageHeader, Section } from '@/components/ui';
 import { requireOrg } from '@/core/authz/guards';
 import { CastForm } from '@/components/cast-form';
 import { contestFields } from '@/components/contest-fields';
@@ -26,30 +26,28 @@ export default async function Desk({ params }: { params: Promise<{ org: string; 
   const back = `/o/${ctx.slug}/meetings/${v.head.id}`;
   return (
     <main>
-      <h1>Desk: {v.head.meetingId}</h1>
+      <PageHeader eyebrow="Meeting" title={`Desk: ${v.head.meetingId}`} lead="Cast for the owner in front of you, from a paper ballot." />
+      <MeetingTabs base={back} board />
       <ScopeNote />
-      <p><Link href={back}>Back to the meeting</Link></p>
       {v.head.closedAt ? (
         <p>This meeting closed at {v.head.closedAt}; nothing more can be cast.</p>
       ) : (
         <>
           <p>You cast for the owner in front of you. The engine judges the ballot as if they had cast it; your account is recorded in the sealed link (unreadable after close), not in the audit log (D-39). Hand them the receipt and the nonce: they are shown once.</p>
-          <section aria-labelledby="direct-h">
-            <h2 id="direct-h">Direct ballot</h2>
+          <Section id="direct-h" title="Direct ballot">
             <CastForm action={deskCastAction.bind(null, ctx.slug)} contests={fields} limit={RECEIPT_LIMIT}>
               <input type="hidden" name="meetingId" value={v.head.id} />
               <label>Owner <select name="ownerId" required>{v.owners.map((o) => <option key={o.id} value={o.id}>{o.ownerId} {o.name}</option>)}</select></label>
               <label>Unit <select name="unitId" required>{v.units.map((u) => <option key={u.id} value={u.id}>{u.unitId}</option>)}</select></label>
             </CastForm>
-          </section>
+          </Section>
           {v.proxies.length > 0 && (
-            <section aria-labelledby="proxy-h">
-              <h2 id="proxy-h">Proxy ballot (cast for the holder)</h2>
+            <Section id="proxy-h" title="Proxy ballot (cast for the holder)">
               <CastForm action={deskProxyCastAction.bind(null, ctx.slug)} contests={fields} limit={RECEIPT_LIMIT}>
                 <input type="hidden" name="meetingId" value={v.head.id} />
                 <label>Proxy <select name="proxyId" required>{v.proxies.map((p) => <option key={p.id} value={p.id}>{p.proxyId}: {p.grantorUnit.unitId} held by {p.holderOwner.ownerId}</option>)}</select></label>
               </CastForm>
-            </section>
+            </Section>
           )}
         </>
       )}

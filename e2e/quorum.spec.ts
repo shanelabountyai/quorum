@@ -55,6 +55,9 @@ test('the board creates the meeting and records its proxies', async ({ page }) =
   await asBoard(page);
   await page.goto(`/o/${SLUG}/meetings`);
   await expectAccessible(page, 'meetings (empty)', 'Create a meeting');
+  await page.goto(`/o/${SLUG}/design`);
+  await expectAccessible(page, 'design system', 'Status families');
+  await page.goto(`/o/${SLUG}/meetings`);
   await page.getByLabel('meeting.json').fill(meetingJson);
   await page.getByRole('button', { name: 'Create meeting' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('AM-E2E');

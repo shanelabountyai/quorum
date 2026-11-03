@@ -1,4 +1,5 @@
 import { requireOrg } from '@/core/authz/guards';
+import { EmptyState, PageHeader, Section } from '@/components/ui';
 import { can } from '@/core/authz/permissions';
 import { ActionForm } from '@/core/ui/action-form';
 import { ScopeNote } from '@/components/honesty';
@@ -45,7 +46,7 @@ export default async function Roster({ params, searchParams }: { params: Promise
   const total = units.reduce((n, u) => n + (u.bps ?? 0), 0);
   return (
     <main>
-      <h1>Roster</h1>
+      <PageHeader eyebrow="Association" title="Roster" lead="Units, their shares and their owners, read as of the day you choose." />
       <ScopeNote>Shares and owners are read as of the day chosen (E-1, E-3); shares must sum to 10000 bps on every day (D-9).</ScopeNote>
       <form method="get">
         <label>As of <input name="asOf" defaultValue={asOf} pattern="\d{4}-\d{2}-\d{2}" /></label> <button type="submit">Show</button>
@@ -61,7 +62,8 @@ export default async function Roster({ params, searchParams }: { params: Promise
           </tbody>
         </table>
       )}
-      <h2>Owners ({v.owners.length})</h2>
+      <Section id="owners-h" title={`Owners (${v.owners.length})`}>
+      {v.owners.length === 0 && <EmptyState>No owners on the roster yet.</EmptyState>}
       {v.owners.length > 0 && (
         <table>
           <thead><tr><th scope="col">Owner</th><th scope="col">Name</th>{board && <th scope="col">Email</th>}<th scope="col">Account linked</th></tr></thead>
@@ -72,9 +74,9 @@ export default async function Roster({ params, searchParams }: { params: Promise
           </tbody>
         </table>
       )}
+      </Section>
       {board && (
-        <>
-          <h2>Import the roster</h2>
+        <Section id="import-h" title="Import the roster">
           <p>Write-once: a first import inserts every row; importing the same files again inserts nothing and says so; files that differ from what is stored are refused before anything is written.</p>
           <ActionForm action={importRosterAction.bind(null, ctx.slug)}>
             {FILES.map(([name, label]) => (
@@ -85,7 +87,7 @@ export default async function Roster({ params, searchParams }: { params: Promise
             ))}
             <button type="submit">Import roster</button>
           </ActionForm>
-        </>
+        </Section>
       )}
     </main>
   );
