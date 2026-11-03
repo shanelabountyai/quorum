@@ -1,6 +1,6 @@
 # NEXT
 
-## ▶ 2026-11-03: foundation v1.4.0 merged PR #3 merged 2026-11-03 (6bbab9e), CI green (run 41728390522). Nothing outstanding
+## ▶ 2026-11-03: foundation v1.4.0 merged into main via PR #3 2026-11-03 (6bbab9e), CI green (run 41728390522). Nothing outstanding
 
 Carries v1.3.1 (`security:`, `next` 16.3.8). `filterListedOrgs` hides archived orgs on `/onboarding` and `/demo` (D-58, closes D-52's seam). Local gate: `npm test` 494/494, lint/typecheck clean, `foundation:drift` clean vs v1.4.0, `tally:eval` / `tally:eval:db` 0 differences, `fixtures:check` / `tally:lint` OK. e2e left to CI. `CLONES.md` row → v1.4.0 here and in saas foundation.
 
