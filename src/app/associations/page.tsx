@@ -5,8 +5,8 @@ import { db } from '@/core/db';
 
 export const metadata = { title: 'Your associations' };
 
-// D-43: the clone's org list, with archived associations hidden. (The template's /onboarding, where a sign-in lands,
-// is template-owned and still lists every org; stated in docs/decisions.md.)
+// D-43: the clone's org list, with archived associations hidden. (The template's /onboarding hides them too, through
+// filterListedOrgs in org-hooks.ts, D-58.)
 export default async function Associations() {
   const s = await requireUser();
   const memberships = await db.membership.findMany({ where: { userId: s.userId }, select: { role: true, org: { select: { id: true, slug: true, name: true } } }, orderBy: { createdAt: 'asc' } });
