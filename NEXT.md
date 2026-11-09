@@ -1,5 +1,9 @@
 # NEXT
 
+## 2026-11-09: upgraded to foundation v1.6.2 (branch `foundation-v1.6.2`)
+
+No migration, no role/RLS change (quorum_app stays BYPASSRLS, D-61). CI enforce leg takes the template's DB-name lines (F-14); module-guard test relaxed for removed billing (F-17). Gate: typecheck, lint, 574 unit pass / 27 skipped, drift clean, build:test ok, audit 0.
+
 ## ▶ 2026-11-03: foundation v1.4.0 merged into main via PR #3 2026-11-03 (6bbab9e), CI green (run 41728390522). Nothing outstanding
 
 Carries v1.3.1 (`security:`, `next` 16.3.8). `filterListedOrgs` hides archived orgs on `/onboarding` and `/demo` (D-58, closes D-52's seam). Local gate: `npm test` 494/494, lint/typecheck clean, `foundation:drift` clean vs v1.4.0, `tally:eval` / `tally:eval:db` 0 differences, `fixtures:check` / `tally:lint` OK. e2e left to CI. `CLONES.md` row → v1.4.0 here and in saas foundation.
