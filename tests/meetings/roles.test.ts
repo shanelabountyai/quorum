@@ -28,11 +28,12 @@ const as = async (sql: string): Promise<string> => {
 
 describe('D-42 quorum_web, the runtime login', () => {
   let ballotId = '';
+  let orgId = '';
   beforeAll(async () => {
     await emptyDatabase();
     const applied = await ensureWebRole(db, password);
     expect(applied.some((s) => s.includes('PASSWORD') && !s.includes(password))).toBe(true); // the password is never printed
-    const orgId = await ensureOrg('roles');
+    orgId = await ensureOrg('roles');
     const replay = await replayFixture(orgId);
     await closeMeeting(replay.meetingRowId, REPLAY_CLOSED_AT);
     ballotId = (await db.ballot.findFirstOrThrow()).id;
@@ -77,7 +78,10 @@ describe('D-42 quorum_web, the runtime login', () => {
   });
 
   it('on a template table it may UPDATE, the template\'s own append-only trigger still refuses it (P0001)', async () => {
-    await db.auditEvent.create({ data: { action: 'roles.test', actorUserId: null } });
+    // v1.6.x forces RLS on AuditEvent and quorum_web is NOBYPASSRLS (D-42), so the row must be in the org the session
+    // names, or the UPDATE matches nothing and the trigger never fires (D-61).
+    await db.auditEvent.create({ data: { action: 'roles.test', actorUserId: null, orgId } });
+    expect(await as(`SELECT set_config('app.org_id', '${orgId}', false)`)).toBe('ok');
     expect(await as(`UPDATE "AuditEvent" SET action = 'x'`)).toBe('P0001');
     expect(await as(`DELETE FROM "AuditEvent"`)).toBe('P0001');
     expect(await as('SELECT count(*) FROM "User"')).toBe('ok'); // the foundation's tables work on this login

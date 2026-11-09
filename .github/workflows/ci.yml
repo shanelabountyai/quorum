@@ -21,6 +21,12 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # addendum §2: off = the owner role (as every clone runs today); enforce = app_rw, NOBYPASSRLS. RLS is opt-in (D-23;
+        # owner decision 2026-11-05): a clone runs the enforce leg once it sets the repo variable RLS_ENFORCE=1. The template always runs both.
+        rls: ${{ fromJSON((github.repository == 'shanelabountyai/saas-foundation' || vars.RLS_ENFORCE == '1') && '["off","enforce"]' || '["off"]') }}
     env:
       # Ephemeral runner-local Postgres, gone when the job ends. Nothing here is a secret.
       PGHOST: localhost
@@ -93,6 +99,14 @@ jobs:
       # Phase 2 gate (docs/phase-2-tasks.md 2.9): the same 113 ballots through the cast path, close, the recount from
       # Ballot rows, diffed against the same expected files; then the whole suite, tamper tests included.
       - run: npm run tally:eval:db
+      - name: RLS enforce leg — app role, system URL
+        if: matrix.rls == 'enforce'
+        run: |
+          psql -d quorum_test -c "CREATE ROLE app_rw LOGIN PASSWORD 'app_rw' NOBYPASSRLS NOSUPERUSER;"
+          psql -d quorum_test -c "GRANT USAGE ON SCHEMA public TO app_rw; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_rw; GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_rw;"
+          echo "RLS_MODE=enforce" >> "$GITHUB_ENV"
+          echo "DATABASE_URL_SYSTEM=$DATABASE_URL" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=postgresql://app_rw:app_rw@localhost:5432/quorum_test?connection_limit=8&pool_timeout=20" >> "$GITHUB_ENV"
       - run: npx vitest run
       # Production build, served — the way it ships. login.spec.ts drives a real page.
       - run: npx playwright install --with-deps chromium
