@@ -8,8 +8,9 @@ import { asApp } from '@/meetings/db';
 import { delinquentSnapshot, eligibilityScope, forOwner } from '@/meetings/eligibility';
 import { linkedOwner } from '@/meetings/owners';
 import { readRoster } from '@/meetings/roster';
+import { assessmentsOf, resolutionId } from '@/ledger/assessment';
 import { formatCents } from '@/ledger/money';
-import { closeMeetingAction, importProxiesAction, intakeProxyAction, queueNoticeAction } from './actions';
+import { closeMeetingAction, declareAssessmentAction, importProxiesAction, intakeProxyAction, postAssessmentAction, queueNoticeAction } from './actions';
 
 export const metadata = { title: 'Meeting' };
 
@@ -28,6 +29,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ org: s
       live: await liveQuorumInTx(tx, head),
       proxies: proxies.map((p) => ({ ...p, intake: intakeCode(p, head.definition.rules, roster.ownerships) })),
       me: await linkedOwner(tx, ctx.orgId, ctx.userId),
+      assessments: await assessmentsOf(tx, head.id),
+      ballots: await tx.ballot.count({ where: { meetingId: head.id } }),
       units: board ? await tx.unit.findMany({ where: { orgId: ctx.orgId }, orderBy: { unitId: 'asc' }, select: { id: true, unitId: true } }) : [],
       owners: board ? await tx.owner.findMany({ where: { orgId: ctx.orgId }, orderBy: { ownerId: 'asc' }, select: { id: true, ownerId: true, name: true } }) : [],
     };
@@ -77,6 +80,46 @@ export default async function MeetingPage({ params }: { params: Promise<{ org: s
           ))}
         </tbody>
       </table>
+      </Section>
+
+      <Section id="assess-h" title="Special assessments">
+        <p>A resolution declared a special assessment before the first ballot posts once, after close, if it PASSED: each unit is charged its share of the amount (bps as of the charge day, rounded down to the cent) and the remainder goes on the run&apos;s ROUNDING line (D-21, D-64).</p>
+        {v.assessments.length ? (
+          <ul>
+            {v.assessments.map((a) => (
+              <li key={a.id}>
+                {resolutionId(v.head.meetingId, a.contestId)} {a.title}: {formatCents(a.amountCents)} ({a.amountCents} cents).{' '}
+                {a.run ? (
+                  <><Pill k="done">Posted</Pill> on {a.run.chargedOn}: {a.run.units} charges totalling {formatCents(a.run.postedCents)}, ROUNDING {formatCents(a.run.roundingCents)}.</>
+                ) : !v.head.closedAt ? (
+                  <>Voting decides it; it posts after close only if it passes.</>
+                ) : a.result === 'PASSED' ? (
+                  board ? (
+                    <ActionForm action={postAssessmentAction.bind(null, slug)}>
+                      <input type="hidden" name="meetingId" value={v.head.id} />
+                      <input type="hidden" name="contestId" value={a.contestId} />
+                      <button type="submit">Post the {a.contestId} assessment to every unit</button>
+                    </ActionForm>
+                  ) : (
+                    <><Pill k={resultKind('PASSED')}>PASSED</Pill>; the board posts it.</>
+                  )
+                ) : (
+                  <>Result {a.result ? <Pill k={resultKind(a.result)}>{a.result}</Pill> : 'none'}: nothing is posted.</>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState>None declared.</EmptyState>
+        )}
+        {board && !v.head.closedAt && v.ballots === 0 && v.head.definition.contests.some((c) => c.kind === 'RESOLUTION' && !v.assessments.some((a) => a.contestId === c.contest_id)) && (
+          <ActionForm action={declareAssessmentAction.bind(null, slug)}>
+            <input type="hidden" name="meetingId" value={v.head.id} />
+            <label>Resolution <select name="contestId" required>{v.head.definition.contests.filter((c) => c.kind === 'RESOLUTION' && !v.assessments.some((a) => a.contestId === c.contest_id)).map((c) => <option key={c.contest_id} value={c.contest_id}>{c.contest_id} {c.title}</option>)}</select></label>
+            <label>Amount in dollars <input name="amount" required inputMode="decimal" placeholder="180000.00" /></label>
+            <button type="submit">Declare special assessment</button>
+          </ActionForm>
+        )}
       </Section>
 
       <Section id="elig-h" title={`Eligibility as of ${snap.record_date}`}>
