@@ -18,11 +18,16 @@ let orgId = '';
 let meetingRowId = '';
 
 const open = () => Desk({ params: Promise.resolve({ org: SLUG, id: meetingRowId }) });
-/** The text a rendered server-component tree carries (strings and numbers in children), without rendering it. */
+/** The text a rendered server-component tree carries (strings and numbers in children, and in the design system's
+ * text props: PageHeader's eyebrow/title/lead/status, Section's title — D-66), without rendering it. */
+const TEXT_PROPS = ['eyebrow', 'title', 'lead', 'status', 'children'] as const;
 const textOf = (node: unknown): string => {
   if (typeof node === 'string' || typeof node === 'number') return String(node);
   if (Array.isArray(node)) return node.map(textOf).join('');
-  if (node && typeof node === 'object' && 'props' in node) return textOf((node as { props: { children?: unknown } }).props.children);
+  if (node && typeof node === 'object' && 'props' in node) {
+    const props = (node as { props: Record<string, unknown> }).props;
+    return TEXT_PROPS.map((k) => textOf(props[k])).join('');
+  }
   return '';
 };
 
