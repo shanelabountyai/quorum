@@ -90,7 +90,7 @@ export const postAssessment = (who: Who, input: { meetingRowId: string; contestI
     const title = head.definition.contests.find((c) => c.contest_id === input.contestId)?.title ?? '';
     try {
       const r = await postRunInTx(tx, who, {
-        month: chargedOn.slice(0, 7),
+        month: chargedOn.slice(0, 7), // the charge month, not a dues month: the run is unique on (orgId, month, resolution), so no clash with the monthly run
         chargedOn,
         budgetCents: declared.amountCents,
         entryId: assessmentEntryId(head.meetingId, input.contestId),
