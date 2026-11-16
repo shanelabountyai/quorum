@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { MeetingTabs, Notice, PageHeader, Section } from '@/components/ui';
 import { requireOrg } from '@/core/authz/guards';
 import { ActionForm } from '@/core/ui/action-form';
 import { CastForm } from '@/components/cast-form';
@@ -32,9 +33,9 @@ export default async function Vote({ params }: { params: Promise<{ org: string; 
   const back = `/o/${ctx.slug}/meetings/${v.head.id}`;
   return (
     <main>
-      <h1>Vote: {v.head.meetingId}</h1>
+      <PageHeader eyebrow="Meeting" title={`Vote: ${v.head.meetingId}`} lead="One ballot per unit. The engine judges every ballot by the meeting's rules and tells you its code." />
+      <MeetingTabs base={back} board={false} />
       <ScopeNote />
-      <p><Link href={back}>Back to the meeting</Link></p>
       {v.head.closedAt ? (
         <p>This meeting closed at {v.head.closedAt}. See the <Link href={`${back}/results`}>results</Link> and look up your receipt there.</p>
       ) : !v.me ? (
@@ -43,28 +44,27 @@ export default async function Vote({ params }: { params: Promise<{ org: string; 
         <>
           <p>You are voting as roster owner <strong>{v.me.ownerId}</strong> ({v.me.name}). One ballot per unit (O-7); the engine judges every ballot by the meeting&apos;s rules and tells you its code.</p>
           {v.units.map((u) => (
-            <section key={u.id} aria-label={`Ballot for unit ${u.unitId}`}>
-              <h2>Unit {u.unitId}</h2>
+            <Section key={u.id} id={`unit-${u.id}`} title={`Unit ${u.unitId}`}>
               <CastForm action={castOwnAction.bind(null, ctx.slug)} contests={fields} limit={RECEIPT_LIMIT}>
                 <input type="hidden" name="meetingId" value={v.head.id} />
                 <input type="hidden" name="unitId" value={u.id} />
               </CastForm>
-            </section>
+            </Section>
           ))}
           {v.units.length === 0 && <p>You own no unit as of the record date {v.head.definition.rules.record_date}.</p>}
           {v.proxies.map((p) => (
-            <section key={p.id} aria-label={`Proxy ballot ${p.proxyId}`}>
-              <h2>As proxy {p.proxyId} for unit {p.grantorUnit.unitId}</h2>
-              {(p.revocation?.revokedAt ?? p.revokedAt) && <p>The grantor revoked this proxy at {p.revocation?.revokedAt ?? p.revokedAt}; a ballot cast with it now is rejected PROXY_REVOKED.</p>}
+            <Section key={p.id} id={`proxy-${p.id}`} title={`As proxy ${p.proxyId} for unit ${p.grantorUnit.unitId}`}>
+              {(p.revocation?.revokedAt ?? p.revokedAt) && (
+                <Notice k="risk" title="Revoked by the grantor">The grantor revoked this proxy at {p.revocation?.revokedAt ?? p.revokedAt}; a ballot cast with it now is rejected PROXY_REVOKED.</Notice>
+              )}
               <CastForm action={castByProxyAction.bind(null, ctx.slug)} contests={fields} limit={RECEIPT_LIMIT}>
                 <input type="hidden" name="meetingId" value={v.head.id} />
                 <input type="hidden" name="proxyId" value={p.id} />
               </CastForm>
-            </section>
+            </Section>
           ))}
           {v.granted.length > 0 && (
-            <section aria-labelledby="granted-h">
-              <h2 id="granted-h">Proxies you granted</h2>
+            <Section id="granted-h" title="Proxies you granted">
               <p>You may revoke a proxy you granted until the meeting closes. A ballot your holder casts with it afterwards is rejected PROXY_REVOKED; one they already cast keeps its label, and your own ballot for the unit supersedes it (D-26).</p>
               <ul>
                 {v.granted.map((g) => (
@@ -76,13 +76,13 @@ export default async function Vote({ params }: { params: Promise<{ org: string; 
                       <ActionForm action={revokeOwnProxyAction.bind(null, ctx.slug)}>
                         <input type="hidden" name="meetingId" value={v.head.id} />
                         <input type="hidden" name="proxyId" value={g.id} />
-                        <button type="submit">Revoke proxy {g.proxyId}</button>
+                        <button type="submit" className="secondary">Revoke proxy {g.proxyId}</button>
                       </ActionForm>
                     )}
                   </li>
                 ))}
               </ul>
-            </section>
+            </Section>
           )}
         </>
       )}

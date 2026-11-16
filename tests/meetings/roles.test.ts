@@ -14,6 +14,7 @@ import { emptyDatabase, REPLAY_CLOSED_AT, replayFixture } from '../../scripts/ta
 
 const password = randomBytes(18).toString('base64url');
 let web: pg.Client;
+let owner = 'postgres'; // the role the migrations ran as; differs per machine
 
 /** The SQLSTATE a statement fails with as quorum_web, or 'ok'. */
 const as = async (sql: string): Promise<string> => {
@@ -27,14 +28,16 @@ const as = async (sql: string): Promise<string> => {
 
 describe('D-42 quorum_web, the runtime login', () => {
   let ballotId = '';
+  let orgId = '';
   beforeAll(async () => {
     await emptyDatabase();
     const applied = await ensureWebRole(db, password);
     expect(applied.some((s) => s.includes('PASSWORD') && !s.includes(password))).toBe(true); // the password is never printed
-    const orgId = await ensureOrg('roles');
+    orgId = await ensureOrg('roles');
     const replay = await replayFixture(orgId);
     await closeMeeting(replay.meetingRowId, REPLAY_CLOSED_AT);
     ballotId = (await db.ballot.findFirstOrThrow()).id;
+    owner = decodeURIComponent(new URL(process.env.DATABASE_URL!).username);
     const url = new URL(process.env.DATABASE_URL!);
     url.username = WEB_ROLE;
     url.password = password;
@@ -69,13 +72,16 @@ describe('D-42 quorum_web, the runtime login', () => {
     expect(await as('ALTER TABLE "Ballot" DISABLE TRIGGER "Ballot_append_only"')).toBe('42501');
     expect(await as('ALTER TABLE "Ballot" DISABLE TRIGGER ALL')).toBe('42501');
     expect(await as('SET session_replication_role = replica')).toBe('42501');
-    expect(await as('SET ROLE postgres')).toBe('42501');
+    expect(await as(`SET ROLE "${owner}"`)).toBe('42501');
     expect(await as(`GRANT SELECT ON "BallotSecret" TO ${WEB_ROLE}`)).toBe('42501');
     expect(await as('SELECT * FROM "BallotSecret"')).toBe('42501'); // still sealed after the attempts
   });
 
   it('on a template table it may UPDATE, the template\'s own append-only trigger still refuses it (P0001)', async () => {
-    await db.auditEvent.create({ data: { action: 'roles.test', actorUserId: null } });
+    // v1.6.x forces RLS on AuditEvent and quorum_web is NOBYPASSRLS (D-42), so the row must be in the org the session
+    // names, or the UPDATE matches nothing and the trigger never fires (D-61).
+    await db.auditEvent.create({ data: { action: 'roles.test', actorUserId: null, orgId } });
+    expect(await as(`SELECT set_config('app.org_id', '${orgId}', false)`)).toBe('ok');
     expect(await as(`UPDATE "AuditEvent" SET action = 'x'`)).toBe('P0001');
     expect(await as(`DELETE FROM "AuditEvent"`)).toBe('P0001');
     expect(await as('SELECT count(*) FROM "User"')).toBe('ok'); // the foundation's tables work on this login

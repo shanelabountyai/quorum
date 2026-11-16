@@ -46,3 +46,13 @@ TypeScript on a clone of saas-foundation v1.3.0: Next.js 16, Prisma 7, PostgreSQ
 
 ## Definition of done (any task)
 Tests green (or recorded as CI-only with the reason), `tally:eval` matching the reference exactly, `fixtures:check` OK, `tally:lint` OK, no float money or shares and no forbidden import under `src/tally/`, decisions doc updated if a rule changed, `NEXT.md` updated, numbers (not adjectives) in the commit message when a measurement changed.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

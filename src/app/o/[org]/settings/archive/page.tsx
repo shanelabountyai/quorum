@@ -1,4 +1,5 @@
 import { requireOrg } from '@/core/authz/guards';
+import { Notice, PageHeader } from '@/components/ui';
 import { ActionForm } from '@/core/ui/action-form';
 import { asApp } from '@/meetings/db';
 import { archiveAssociation } from './actions';
@@ -10,14 +11,15 @@ export default async function Archive({ params }: { params: Promise<{ org: strin
   const archive = await asApp((tx) => tx.orgArchive.findUnique({ where: { orgId: ctx.orgId } }));
   return (
     <main>
-      <h1>Archive this association</h1>
+      <PageHeader eyebrow="Settings" title="Archive this association" />
+      <Notice k="hold" title="Archiving is permanent">Every record stays readable and every new write is refused.</Notice>
       <p>
         An association with meetings, units, ledger entries or violations keeps them: those records are append-only and the
         tally&apos;s proof depends on them, so the association cannot be deleted (D-43). Archiving keeps every record readable
         and refuses every new write. It is permanent.
       </p>
       {archive ? (
-        <p className="archived">Archived on {archive.archivedAt.toISOString()}: {archive.reason}</p>
+        <Notice k="done" title="Archived"><p>Archived on {archive.archivedAt.toISOString()}: {archive.reason}</p></Notice>
       ) : (
         <ActionForm action={archiveAssociation.bind(null, ctx.slug)}>
           <label>
