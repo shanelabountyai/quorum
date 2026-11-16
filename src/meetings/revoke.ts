@@ -25,25 +25,37 @@ type Who = { orgId: string; userId: string };
 type Input = { meetingRowId: string; proxyRowId: string; reason?: string };
 
 export const NOT_YOURS = 'Only the owner who granted this proxy, or the board at the desk, can revoke it.';
+export const alreadyRevoked = (proxyId: string, at?: string) => `Proxy ${proxyId} was already revoked${at ? ` at ${at}` : ''}.`;
+/** Prisma's unique-constraint error (the same test as `isUnique` in src/ledger/ledger.ts). */
+const isUniqueViolation = (e: unknown) => (e as { code?: string })?.code === 'P2002';
 
 async function revokeInTx(tx: Tx, who: Who, input: Input, channel: RevocationChannel, mayRevoke: (grantorOwnerRowId: string) => Promise<boolean>): Promise<Revocation> {
   const head = await meetingInOrg(tx, who.orgId, input.meetingRowId);
   assertUuid(input.proxyRowId);
-  const proxy = await tx.proxy.findFirst({ where: { id: input.proxyRowId, meetingId: head.id }, include: { revocation: true } });
+  const proxy = await tx.proxy.findFirst({ where: { id: input.proxyRowId, meetingId: head.id } });
   if (!proxy) notFound();
   if (!(await mayRevoke(proxy.grantorOwnerId))) throw new Refused(NOT_YOURS);
   // the lock first, so the instant below is ordered with every cast in this meeting (D-36)
   const [lock] = await tx.$queryRaw<{ closedAt: string | null }[]>`SELECT "closedAt" FROM quorum_lock_meeting(${head.id}::uuid)`;
   if (lock?.closedAt) throw new Refused(`This meeting closed at ${lock.closedAt}; a proxy can no longer be revoked.`);
   await assertNotArchived(tx, who.orgId);
-  const already = proxy.revocation?.revokedAt ?? proxy.revokedAt;
-  if (already) throw new Refused(`Proxy ${proxy.proxyId} was already revoked at ${already}.`);
+  // Read the revocation only now, under the lock (D-66): a read taken before it could miss a revocation committed by a
+  // concurrent call that held the lock first. Proxy.revokedAt is the import's value and never changes (append-only).
+  const prior = await tx.proxyRevocation.findUnique({ where: { proxyId: proxy.id }, select: { revokedAt: true } });
+  const already = prior?.revokedAt ?? proxy.revokedAt;
+  if (already) throw new Refused(alreadyRevoked(proxy.proxyId, already));
   const reason = (input.reason ?? '').trim();
   if (channel === 'DESK' && !reason) throw new Refused('Give the reason for revoking at the desk (for example, the grantor presented a signed revocation).');
   const revokedAt = wallClock(head.definition.rules.timezone_label);
   const [latest] = await tx.$queryRaw<{ at: string | null }[]>`SELECT max("castAt") AS at FROM "Ballot" WHERE "meetingId" = ${head.id}::uuid`;
   if (latest?.at && revokedAt < latest.at) throw new CastOutOfOrder(revokedAt, latest.at); // never on a live clock; a stored label must not be contradicted
-  await tx.proxyRevocation.create({ data: { proxyId: proxy.id, meetingId: head.id, revokedAt, channel, byUserId: who.userId, reason } });
+  try {
+    await tx.proxyRevocation.create({ data: { proxyId: proxy.id, meetingId: head.id, revokedAt, channel, byUserId: who.userId, reason } });
+  } catch (e) {
+    // the unique index on proxyId is the last word if anything still races past the lock: the domain answer, not a 500
+    if (isUniqueViolation(e)) throw new Refused(alreadyRevoked(proxy.proxyId));
+    throw e;
+  }
   await audit(who, 'proxy.revoked', { targetType: 'proxy', targetId: proxy.id, data: { proxyId: proxy.proxyId, channel, revokedAt } }, tx);
   return { proxyId: proxy.proxyId, revokedAt, channel };
 }
