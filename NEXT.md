@@ -2,7 +2,15 @@
 
 ## ▶ 2026-11-16: PR #2 (`followups`) retargeted to `main` and merged up to date; Shane reviews and decides
 
-__SESSION__
+Done unattended by the cleanup swarm; **never merged by the agent**. PR #2 base changed `kickoff` → `main` (owner-approved). `origin/main` merged into `followups` (56cd42f, a merge commit, no rebase, no force-push), 5 conflicts resolved: the desk, meeting and vote pages keep main's design system and carry the PR's desk 404, proxy revocation and special-assessment sections on `Section`/`Notice`/`Pill`/`EmptyState` (D-66 c).
+- **Renumbered** (9ea2e78): D-56→**D-62** desk 404, D-57→**D-63** proxy revocation, D-58→**D-64** special assessment, D-59→**D-65** owner confirms the two defaults; main's D-56..D-61 untouched. Commit messages before this keep the old numbers (decisions.md says so).
+- **Migrations re-dated** (fa41cec) to `20261116000000_quorum_proxy_revocation` / `20261116100000_quorum_special_assessment`, after main's `20261108000005`; no new `orgId` table, so no RLS policy migration.
+- **Race fixed** (bc7e6d6): `revoke.ts` reads the revocation under the meeting lock; a P2002 is `Refused("… already revoked.")`. `tests/unit/proxy-revocation-race.test.ts` (4, no DB).
+- D-66 records the choices (0444dc3).
+- desk-access test reads `PageHeader` text props (ac7cf36).
+- **Local gate (cloud sandbox):** `tsc` clean; `eslint` 0 errors (1 pre-existing warning in `export-hooks.ts`); vitest `tests/tally` + `tests/unit` 209 passed (the two template unit files need env and a DB); `tally:eval` 113/87/26 matches; `tally:lint`, `fixtures:check`, `foundation:drift` OK. **Not run here:** DB tests (incl. `tests/followups/*`), `tally:eval:db`, e2e/axe, `migrate diff` — Prisma engines are 403 in the sandbox; **CI decides**.
+- **CI:** red on 0444dc3 (run 43907720556: `desk-access.test.ts` walked only `children`, and the desk heading is now `PageHeader`'s `title` prop; fixed in ac7cf36, assertions unchanged). **Green on ac7cf36 (run 43908586862):** `ci (off)` — migrate deploy in order (…000005 then the two 20261116 migrations), `migrate diff` empty, `tally:eval:db` 0 differences, vitest 608 passed / 27 skipped (67 files), Playwright 19 passed, axe 0 violations in light and dark; `modules-removed` green. PR #2 `mergeable: clean`.
+- Left for Shane: review PR #2 and merge or not; optionally squash on merge (three generations of D-numbers in commit messages); axe light/dark is covered by CI's e2e sweep only.
 
 ## 2026-11-09: upgraded to foundation v1.6.2 (branch `foundation-v1.6.2`)
 
