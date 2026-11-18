@@ -49,3 +49,20 @@ export async function seedApp(org: { orgId: string; userId: string }, key: 'a' |
   await db.ownerLink.create({ data: { orgId: org.orgId, ownerId: id(3), userId: org.userId } });
   return { unit: id(1), owner: id(3), ledgerEntry: id(5), meeting: id(6), proxy: id(7), violation: id(8) };
 }
+
+// CLONE-OWNED. The clone's models with no orgId column, i.e. outside tenancy and RLS on purpose (INV-42, v1.7.0). Name
+// each one with a comment saying why; a model without orgId that is not here (or in core's list) fails INV-42.
+export const GLOBAL_MODELS: readonly string[] = [
+  // v1.7.0 rollout: listed as found (INV-42). The reason is read from the schema; confirm or give the model an orgId.
+  'UnitShare', // org-owned through Unit; outside RLS and the org export
+  'Ownership', // org-owned through Owner, Unit; outside RLS and the org export
+  'LedgerEntry', // org-owned through DuesRun, Unit; outside RLS and the org export
+  'SpecialAssessment', // org-owned through Meeting; outside RLS and the org export
+  'ViolationEvent', // org-owned through Violation; outside RLS and the org export
+  'Proxy', // org-owned through Meeting, Owner, Unit; outside RLS and the org export
+  'ProxyRevocation', // org-owned through Meeting; outside RLS and the org export
+  'Ballot', // org-owned through Meeting; outside RLS and the org export
+  'BallotStatusEvent', // no org relation; outside RLS and the org export
+  'BallotSecret', // org-owned through Meeting, Owner, Unit; outside RLS and the org export
+  'ContestResult', // org-owned through Meeting; outside RLS and the org export
+];
